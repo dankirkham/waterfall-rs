@@ -1,0 +1,13 @@
+[package]
+name = "waterfall-rs"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+eframe = "0.18.0"
+egui = "0.18.0"
+fixed-vec-deque = "0.1.9"
+rand = "0.8.5"
+soundio = "0.2.1"
