@@ -46,6 +46,6 @@ impl eframe::App for App {
         //     });
         // });
 
-        // ctx.request_repaint(); // Continuous mode
+        ctx.request_repaint(); // Continuous mode
     }
 }

@@ -1,7 +1,7 @@
 use soundio;
 use std::sync::mpsc::Sender;
 
-pub type RecorderData = i16;
+pub type RecorderData = f32;
 
 pub struct Recorder {
     sender: Sender<RecorderData>,
@@ -14,7 +14,6 @@ impl Recorder {
 
     fn read_callback(&self, stream: &mut soundio::InStreamReader) {
         let mut frames_left = stream.frame_count_max();
-        println!("read_callback");
 
         loop {
             if let Err(e) = stream.begin_read(frames_left) {
@@ -24,7 +23,6 @@ impl Recorder {
             for f in 0..stream.frame_count() {
                 for c in 0..stream.channel_count() {
                     let sample = stream.sample::<RecorderData>(c, f);
-                    println!("Got a sample {}", sample);
                     self.sender.send(sample).unwrap();
                 }
             }
@@ -42,24 +40,33 @@ impl Recorder {
     pub fn start(&self) {
         let mut ctx = soundio::Context::new();
         ctx.set_app_name("Waterfall");
+
+        // let backends = ctx.available_backends();
+        // println!();
+        // println!("Backends:");
+        // for backend in backends {
+        //     println!("{}", backend);
+        // }
+        // println!();
+
         ctx.connect().expect("Failed to connect to sound backend");
         println!("Current backend: {:?}", ctx.current_backend());
 
         ctx.flush_events();
 
-        let devices = ctx.input_devices().unwrap();
-        println!();
-        println!("Devices:");
-        for device in devices {
-            println!("{} {}", device.id(), device.name());
-        }
-        println!();
+        // let devices = ctx.input_devices().unwrap();
+        // println!();
+        // println!("Devices:");
+        // for device in devices {
+        //     println!("{} {}", device.id(), device.name());
+        // }
+        // println!();
 
         let dev = ctx.default_input_device().expect("No input device");
         println!(
-            "Default input device: {} {}",
+            "Default input device: {} ({})",
             dev.name(),
-            if dev.is_raw() { "raw" } else { "cooked" }
+            if dev.is_raw() { "raw" } else { "not raw" }
         );
 
         // fn write_callback(stream: &mut soundio::OutStreamWriter) {
@@ -87,6 +94,10 @@ impl Recorder {
             None::<fn(soundio::Error)>,
         ).unwrap();
 
-        input_stream.start().expect("Unable to start audio input stream");
+        input_stream.start();
+
+        loop {
+            ctx.wait_events();
+        }
     }
 }

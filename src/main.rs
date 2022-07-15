@@ -21,8 +21,10 @@ fn main() {
     let (tx, rx) = mpsc::channel::<PlotRow>();
     let (sample_tx, sample_rx) = mpsc::channel::<RecorderData>();
 
-    let recorder = Recorder::new(sample_tx);
-    recorder.start();
+    thread::spawn(move || {
+        let recorder = Recorder::new(sample_tx);
+        recorder.start();
+    });
 
     thread::spawn(move || {
         let processor = WaterfallProcessor::new(sample_rx, tx);
