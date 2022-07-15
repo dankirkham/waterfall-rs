@@ -1,5 +1,6 @@
 use egui::*;
 use std::sync::mpsc::Receiver;
+use std::time::Duration;
 
 use crate::plot_data::{PlotData, PlotRow, new_plot_data};
 use crate::waterfall_plot::WaterfallPlot;
@@ -46,6 +47,8 @@ impl eframe::App for App {
         //     });
         // });
 
-        ctx.request_repaint(); // Continuous mode
+        ctx.request_repaint_after(std::time::Duration::from_millis(
+            6000 / 44100
+        ));
     }
 }

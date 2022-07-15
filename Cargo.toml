@@ -6,9 +6,12 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-eframe = "0.18.0"
-egui = "0.18.0"
+# eframe = "0.18.0"
+eframe = { git = "https://github.com/emilk/egui", rev = "898f4804" }
+# egui = "0.18.0"
+egui = { git = "https://github.com/emilk/egui", rev = "898f4804" }
 fixed-vec-deque = "0.1.9"
+itertools = "0.9.0"
 rand = "0.8.5"
 realfft = "3.0.0"
 rustfft = "6.0.1"

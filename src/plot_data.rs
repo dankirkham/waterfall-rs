@@ -1,7 +1,7 @@
 use rand::Rng;
 use fixed_vec_deque::FixedVecDeque;
 
-pub const PLOT_DEPTH: usize = 64;
+pub const PLOT_DEPTH: usize = 128;
 pub const PLOT_WIDTH: usize = 256;
 pub type PlotCell = u8;
 pub type PlotRow = Vec<PlotCell>;

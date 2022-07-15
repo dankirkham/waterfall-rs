@@ -1,5 +1,8 @@
 use std::sync::mpsc::{Sender, Receiver};
 use std::sync::Arc;
+use std::cmp::Ordering;
+
+use itertools::Itertools;
 
 use realfft::RealFftPlanner;
 use realfft::RealToComplex;
@@ -9,8 +12,9 @@ use rustfft::num_traits::Zero;
 use crate::recorder::RecorderData;
 use crate::plot_data::{PlotRow, PLOT_WIDTH};
 
-// const N: usize = 11025;
-const N: usize = 1024;
+const N: usize = 6000;
+// const N: usize = 44100;
+// const N: usize = 1024;
 
 pub struct WaterfallProcessor {
     receiver: Receiver<RecorderData>,
@@ -38,6 +42,11 @@ impl WaterfallProcessor {
             let mut spectrum = self.fft.make_output_vec();
             self.fft.process(data.as_mut_slice(), &mut spectrum);
 
+            // Bins are now Fs / N wide
+            // Drop bins that are out of SSB passband (3kHz)
+            let new_length: usize = 3000 / (44100 / N);
+            spectrum.resize(new_length, Complex::default());
+
             // 30 dB is 255
             // -20 dB is 0
             // (-20, 0) -> (30, 255)
@@ -46,6 +55,7 @@ impl WaterfallProcessor {
             let normalized: Vec<u8> = spectrum
                 .iter()
                 .map(|c| c.norm()) // Magnitude
+                .map(|f| f / (N as f32).sqrt()) // Normalization
                 .map(|f| 10.0 * f.log10()) // dB
                 .map(|f| 5.1 * f + 102.0)
                 .map(|f| f.clamp(0.0, 255.0))
