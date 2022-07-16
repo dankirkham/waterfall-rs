@@ -48,7 +48,7 @@ impl eframe::App for App {
         // });
 
         ctx.request_repaint_after(std::time::Duration::from_millis(
-            6000 / 44100
+            4096 / 44100
         ));
     }
 }

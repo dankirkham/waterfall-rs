@@ -9,33 +9,52 @@ use realfft::RealToComplex;
 use rustfft::num_complex::Complex;
 use rustfft::num_traits::Zero;
 
+use crate::configuration::{GlobalConfig, Configuration};
 use crate::recorder::RecorderData;
 use crate::plot_data::{PlotRow, PLOT_WIDTH};
-
-const N: usize = 6000;
-// const N: usize = 44100;
-// const N: usize = 1024;
 
 pub struct WaterfallProcessor {
     receiver: Receiver<RecorderData>,
     sender: Sender<PlotRow>,
     fft: Arc<dyn RealToComplex<f32>>,
+    config: GlobalConfig,
+    fft_depth: usize,
 }
 
 impl WaterfallProcessor {
-    pub fn new(receiver: Receiver<RecorderData>, sender: Sender<PlotRow>) -> Self {
+    pub fn new(receiver: Receiver<RecorderData>, sender: Sender<PlotRow>, config: GlobalConfig) -> Self {
         let mut planner = RealFftPlanner::<f32>::new();
-        let fft = planner.plan_fft_forward(N);
-        Self { receiver, sender, fft }
+        let fft_depth = config.read().unwrap().fft_depth;
+        let fft = planner.plan_fft_forward(fft_depth);
+
+        Self { receiver, sender, fft, config, fft_depth }
     }
 
-    pub fn start(&self) {
-        let mut data: Vec<RecorderData> = Vec::with_capacity(N);
+    fn update_config(&mut self) -> Configuration {
+        let config = self.config.read().unwrap().clone();
+        let fft_depth = config.fft_depth;
+        if fft_depth != self.fft_depth {
+            let mut planner = RealFftPlanner::<f32>::new();
+            self.fft = planner.plan_fft_forward(fft_depth);
+            self.fft_depth = fft_depth;
+        }
+        config
+    }
+
+    pub fn start(&mut self) {
+        let Configuration {
+            audio_sample_rate,
+            fft_depth,
+            min_db,
+            max_db,
+            trim_hz,
+        } = self.update_config();
+        let mut data: Vec<RecorderData> = Vec::with_capacity(fft_depth);
         loop {
             let sample = self.receiver.recv().unwrap();
             data.push(sample);
 
-            if data.len() < N {
+            if data.len() < fft_depth {
                 continue;
             }
 
@@ -43,9 +62,11 @@ impl WaterfallProcessor {
             self.fft.process(data.as_mut_slice(), &mut spectrum);
 
             // Bins are now Fs / N wide
-            // Drop bins that are out of SSB passband (3kHz)
-            let new_length: usize = 3000 / (44100 / N);
-            spectrum.resize(new_length, Complex::default());
+            // Drop bins that are out of SSB passband
+            let new_length: usize = trim_hz / (audio_sample_rate / fft_depth);
+            if new_length < fft_depth {
+                spectrum.resize(new_length, Complex::default());
+            }
 
             // 30 dB is 255
             // -20 dB is 0
@@ -55,7 +76,7 @@ impl WaterfallProcessor {
             let normalized: Vec<u8> = spectrum
                 .iter()
                 .map(|c| c.norm()) // Magnitude
-                .map(|f| f / (N as f32).sqrt()) // Normalization
+                .map(|f| f / (fft_depth as f32).sqrt()) // Normalization
                 .map(|f| 10.0 * f.log10()) // dB
                 .map(|f| 5.1 * f + 102.0)
                 .map(|f| f.clamp(0.0, 255.0))

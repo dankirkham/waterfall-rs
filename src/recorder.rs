@@ -1,15 +1,26 @@
-use soundio;
+use std::ops::Deref;
 use std::sync::mpsc::Sender;
+
+use soundio;
+
+use crate::configuration::GlobalConfig;
 
 pub type RecorderData = f32;
 
 pub struct Recorder {
     sender: Sender<RecorderData>,
+    config: GlobalConfig,
+    sample_rate: i32,
 }
 
 impl Recorder {
-    pub fn new(sender: Sender<RecorderData>) -> Self {
-        Self { sender }
+    pub fn new(sender: Sender<RecorderData>, config: GlobalConfig) -> Self {
+        let sample_rate = config.read().unwrap().audio_sample_rate as i32;
+        Self {
+            sender,
+            sample_rate,
+            config,
+        }
     }
 
     fn read_callback(&self, stream: &mut soundio::InStreamReader) {
@@ -85,7 +96,7 @@ impl Recorder {
         // }
 
         let mut input_stream = dev.open_instream(
-            44100,
+            self.sample_rate,
             soundio::Format::S16LE,
             soundio::ChannelLayout::get_builtin(soundio::ChannelLayoutId::Mono),
             0.1,
@@ -97,7 +108,11 @@ impl Recorder {
         input_stream.start();
 
         loop {
-            ctx.wait_events();
+            let sample_rate = self.config.read().unwrap().audio_sample_rate as i32;
+            if sample_rate as i32 != self.sample_rate {
+                println!("The sample rate changed and we need to reconfigure the audio device.");
+            }
+            // ctx.wait_events();
         }
     }
 }

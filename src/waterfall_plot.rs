@@ -24,6 +24,7 @@ impl<'a> WaterfallPlot<'a> {
             return;
         }
 
+        // TODO: Use spectrum width
         let data_width = data[0].len();
         if data_width == 0 {
             return;
