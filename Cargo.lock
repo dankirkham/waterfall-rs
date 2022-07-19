@@ -621,12 +621,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "either"
-version = "1.7.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3f107b87b6afc2a64fd13cac55fe06d6c8859f12d4b14cbcdd2c67d0976781be"
-
-[[package]]
 name = "emath"
 version = "0.18.0"
 source = "git+https://github.com/emilk/egui?rev=898f4804#898f4804b7b998ffeb1ff9f457b935e1364d6827"
@@ -942,15 +936,6 @@ dependencies = [
  "js-sys",
  "wasm-bindgen",
  "web-sys",
-]
-
-[[package]]
-name = "itertools"
-version = "0.9.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "284f18f85651fe11e8a991b2adb42cb078325c996ed026d994719efcfca1d54b"
-dependencies = [
- "either",
 ]
 
 [[package]]
@@ -2073,7 +2058,6 @@ dependencies = [
  "eframe",
  "egui",
  "fixed-vec-deque",
- "itertools",
  "rand",
  "realfft",
  "rustfft",

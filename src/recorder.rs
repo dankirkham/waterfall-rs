@@ -1,25 +1,26 @@
-use std::ops::Deref;
 use std::sync::mpsc::Sender;
+use std::sync::{Arc, RwLock};
 
 use soundio;
 
-use crate::configuration::GlobalConfig;
+use crate::configuration::Configuration;
 
 pub type RecorderData = f32;
 
 pub struct Recorder {
     sender: Sender<RecorderData>,
-    config: GlobalConfig,
+    config: Arc<RwLock<Configuration>>,
     sample_rate: i32,
 }
 
 impl Recorder {
-    pub fn new(sender: Sender<RecorderData>, config: GlobalConfig) -> Self {
+    pub fn new(sender: Sender<RecorderData>, config: Arc<RwLock<Configuration>>) -> Self {
         let sample_rate = config.read().unwrap().audio_sample_rate as i32;
+
         Self {
             sender,
-            sample_rate,
             config,
+            sample_rate,
         }
     }
 
@@ -52,26 +53,10 @@ impl Recorder {
         let mut ctx = soundio::Context::new();
         ctx.set_app_name("Waterfall");
 
-        // let backends = ctx.available_backends();
-        // println!();
-        // println!("Backends:");
-        // for backend in backends {
-        //     println!("{}", backend);
-        // }
-        // println!();
-
         ctx.connect().expect("Failed to connect to sound backend");
         println!("Current backend: {:?}", ctx.current_backend());
 
         ctx.flush_events();
-
-        // let devices = ctx.input_devices().unwrap();
-        // println!();
-        // println!("Devices:");
-        // for device in devices {
-        //     println!("{} {}", device.id(), device.name());
-        // }
-        // println!();
 
         let dev = ctx.default_input_device().expect("No input device");
         println!(
@@ -79,21 +64,6 @@ impl Recorder {
             dev.name(),
             if dev.is_raw() { "raw" } else { "not raw" }
         );
-
-        // fn write_callback(stream: &mut soundio::OutStreamWriter) {
-        //     let mut rng = rand::thread_rng();
-        //     println!("frame_count_min: {}", stream.frame_count_min());
-        //     println!("frame_count_max: {}", stream.frame_count_max());
-
-        //     let frame_count_max = stream.frame_count_max();
-        //     stream.begin_write(frame_count_max).unwrap();
-        //     for c in 0..stream.channel_count() {
-        //         for f in 0..stream.frame_count() {
-        //             // stream.set_sample::<f32>(c, f, 0.0 as f32);
-        //             stream.set_sample::<f32>(c, f, rng.gen());
-        //         }
-        //     }
-        // }
 
         let mut input_stream = dev.open_instream(
             self.sample_rate,
@@ -108,11 +78,7 @@ impl Recorder {
         input_stream.start();
 
         loop {
-            let sample_rate = self.config.read().unwrap().audio_sample_rate as i32;
-            if sample_rate as i32 != self.sample_rate {
-                println!("The sample rate changed and we need to reconfigure the audio device.");
-            }
-            // ctx.wait_events();
+            ctx.wait_events();
         }
     }
 }

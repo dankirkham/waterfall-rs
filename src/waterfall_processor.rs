@@ -1,56 +1,42 @@
 use std::sync::mpsc::{Sender, Receiver};
-use std::sync::Arc;
-use std::cmp::Ordering;
-
-use itertools::Itertools;
+use std::sync::{Arc, RwLock};
 
 use realfft::RealFftPlanner;
 use realfft::RealToComplex;
 use rustfft::num_complex::Complex;
-use rustfft::num_traits::Zero;
 
-use crate::configuration::{GlobalConfig, Configuration};
+use crate::configuration::Configuration;
 use crate::recorder::RecorderData;
-use crate::plot_data::{PlotRow, PLOT_WIDTH};
+use crate::plot_data::PlotRow;
 
 pub struct WaterfallProcessor {
     receiver: Receiver<RecorderData>,
     sender: Sender<PlotRow>,
     fft: Arc<dyn RealToComplex<f32>>,
-    config: GlobalConfig,
-    fft_depth: usize,
+    config: Arc<RwLock<Configuration>>,
 }
 
 impl WaterfallProcessor {
-    pub fn new(receiver: Receiver<RecorderData>, sender: Sender<PlotRow>, config: GlobalConfig) -> Self {
+    pub fn new(receiver: Receiver<RecorderData>, sender: Sender<PlotRow>, config: Arc<RwLock<Configuration>>) -> Self {
         let mut planner = RealFftPlanner::<f32>::new();
         let fft_depth = config.read().unwrap().fft_depth;
         let fft = planner.plan_fft_forward(fft_depth);
 
-        Self { receiver, sender, fft, config, fft_depth }
-    }
-
-    fn update_config(&mut self) -> Configuration {
-        let config = self.config.read().unwrap().clone();
-        let fft_depth = config.fft_depth;
-        if fft_depth != self.fft_depth {
-            let mut planner = RealFftPlanner::<f32>::new();
-            self.fft = planner.plan_fft_forward(fft_depth);
-            self.fft_depth = fft_depth;
-        }
-        config
+        Self { receiver, sender, fft, config }
     }
 
     pub fn start(&mut self) {
-        let Configuration {
-            audio_sample_rate,
-            fft_depth,
-            min_db,
-            max_db,
-            trim_hz,
-        } = self.update_config();
+        let fft_depth = self.config.read().unwrap().fft_depth;
         let mut data: Vec<RecorderData> = Vec::with_capacity(fft_depth);
         loop {
+            let Configuration {
+                audio_sample_rate,
+                fft_depth,
+                min_db,
+                max_db,
+                trim_hz,
+            } = self.config.read().unwrap().clone();
+
             let sample = self.receiver.recv().unwrap();
             data.push(sample);
 
