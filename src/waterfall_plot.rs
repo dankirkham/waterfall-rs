@@ -1,8 +1,8 @@
 use std::sync::mpsc::Receiver;
+use std::ops::IndexMut;
 
 use egui::*;
 use egui_extras::image::RetainedImage;
-use image::{RgbaImage, Rgba, imageops};
 
 use crate::plot_data::{PlotData, PlotRow, PLOT_DEPTH};
 use crate::turbo::get_color;
@@ -34,33 +34,29 @@ impl<'a> WaterfallPlot<'a> {
             return;
         }
 
-        let mut image = RgbaImage::new(data_width as u32, PLOT_DEPTH as u32);
+        let mut image = ColorImage::new([data_width, PLOT_DEPTH], Color32::default());
         for y in 0..data_height {
             let row = &data[y];
+            // let offset = y * data_width;
             for x in 0..data_width {
                 let sample = row[x];
                 let [red, green, blue] = get_color(sample.into());
-                let color = Rgba([red, green, blue, 255]);
-                let x_min = x as u32;
-                let y_min = (y + PLOT_DEPTH - data_height) as u32;
+                let color = Color32::from_rgb(red, green, blue);
+                let x_min = x as usize;
+                let y_min = (y + PLOT_DEPTH - data_height) as usize;
 
-                image.put_pixel(x_min, y_min, color);
+                *image.index_mut((x_min, y_min)) = color;
 
             }
         }
 
         let size = ui.available_size();
 
-        let color_image = ColorImage::from_rgba_unmultiplied(
-            [data_width, PLOT_DEPTH],
-            &image
-        );
-
         let display_image = RetainedImage::from_color_image(
             "waterfall-image",
-            color_image
+            image
         );
 
-        display_image.show(ui);
+        display_image.show_size(ui, size);
     }
 }
