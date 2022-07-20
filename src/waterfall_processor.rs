@@ -58,13 +58,16 @@ impl WaterfallProcessor {
             // -20 dB is 0
             // (-20, 0) -> (30, 255)
             // y = 5.1x + 102
+            let m = 255.0 / (max_db - min_db);
+            let scale_func = |x| m * (x - min_db);
 
             let normalized: Vec<u8> = spectrum
                 .iter()
                 .map(|c| c.norm()) // Magnitude
                 .map(|f| f / (fft_depth as f32).sqrt()) // Normalization
                 .map(|f| 10.0 * f.log10()) // dB
-                .map(|f| 5.1 * f + 102.0)
+                // .map(|f| 5.1 * f + 102.0)
+                .map(scale_func)
                 .map(|f| f.clamp(0.0, 255.0))
                 .map(|f| f as u8)
                 .collect();

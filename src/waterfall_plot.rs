@@ -37,7 +37,6 @@ impl<'a> WaterfallPlot<'a> {
         let mut image = ColorImage::new([data_width, PLOT_DEPTH], Color32::default());
         for y in 0..data_height {
             let row = &data[y];
-            // let offset = y * data_width;
             for x in 0..data_width {
                 let sample = row[x];
                 let [red, green, blue] = get_color(sample.into());
