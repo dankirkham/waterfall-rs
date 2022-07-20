@@ -28,8 +28,7 @@ impl<'a> WaterfallPlot<'a> {
             return;
         }
 
-        // TODO: Use spectrum width
-        let data_width = data[0].len();
+        let data_width = data[data_height - 1].len();
         if data_width == 0 {
             return;
         }
@@ -38,8 +37,8 @@ impl<'a> WaterfallPlot<'a> {
         for y in 0..data_height {
             let row = &data[y];
             for x in 0..data_width {
-                let sample = row[x];
-                let [red, green, blue] = get_color(sample.into());
+                let sample = row.get(x).unwrap_or(&0);
+                let [red, green, blue] = get_color(*sample as usize);
                 let color = Color32::from_rgb(red, green, blue);
                 let x_min = x as usize;
                 let y_min = (y + PLOT_DEPTH - data_height) as usize;

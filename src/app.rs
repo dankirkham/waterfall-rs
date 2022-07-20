@@ -52,7 +52,6 @@ impl App {
     }
 
     fn update_config(&mut self) {
-        println!("Updating config...");
         self.config = self.edit_config.clone();
         let mut sf = self.safe_config.write().unwrap();
         *sf = self.config.clone()
@@ -130,9 +129,8 @@ impl eframe::App for App {
 
         let fft_depth = self.config.fft_depth;
         let audio_sample_rate = self.config.audio_sample_rate;
-
         ctx.request_repaint_after(std::time::Duration::from_millis(
-            (fft_depth / audio_sample_rate) as u64
+            (fft_depth as f32 / audio_sample_rate as f32 * 1000.0) as u64
         ));
     }
 }

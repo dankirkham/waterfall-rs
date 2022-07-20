@@ -14,6 +14,7 @@ pub struct WaterfallProcessor {
     sender: Sender<PlotRow>,
     fft: Arc<dyn RealToComplex<f32>>,
     config: Arc<RwLock<Configuration>>,
+    fft_depth: usize,
 }
 
 impl WaterfallProcessor {
@@ -22,7 +23,7 @@ impl WaterfallProcessor {
         let fft_depth = config.read().unwrap().fft_depth;
         let fft = planner.plan_fft_forward(fft_depth);
 
-        Self { receiver, sender, fft, config }
+        Self { receiver, sender, fft, fft_depth, config }
     }
 
     pub fn start(&mut self) {
@@ -37,6 +38,12 @@ impl WaterfallProcessor {
                 trim_hz,
             } = self.config.read().unwrap().clone();
 
+            if self.fft_depth != fft_depth {
+                let mut planner = RealFftPlanner::<f32>::new();
+                self.fft_depth = fft_depth;
+                self.fft = planner.plan_fft_forward(self.fft_depth);
+            }
+
             let sample = self.receiver.recv().unwrap();
             data.push(sample);
 
@@ -49,7 +56,7 @@ impl WaterfallProcessor {
 
             // Bins are now Fs / N wide
             // Drop bins that are out of SSB passband
-            let new_length: usize = trim_hz / (audio_sample_rate / fft_depth);
+            let new_length = (trim_hz as f32 / (audio_sample_rate as f32 / fft_depth as f32)) as usize;
             if new_length < fft_depth {
                 spectrum.resize(new_length, Complex::default());
             }
