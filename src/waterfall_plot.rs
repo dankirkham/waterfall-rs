@@ -1,7 +1,11 @@
+use std::sync::mpsc::Receiver;
+
 use egui::*;
+use egui_extras::image::RetainedImage;
+use image::{RgbaImage, Rgba, imageops};
+
 use crate::plot_data::{PlotData, PlotRow, PLOT_DEPTH};
 use crate::turbo::get_color;
-use std::sync::mpsc::Receiver;
 
 pub struct WaterfallPlot<'a> {
     plot_data: &'a mut PlotData,
@@ -30,39 +34,33 @@ impl<'a> WaterfallPlot<'a> {
             return;
         }
 
-        let size = ui.available_size();
-        let size_x = size.x / data_width as f32;
-        let size_y = size.y / PLOT_DEPTH as f32;
-
-        let (response, painter) = ui.allocate_painter(size, Sense::hover());
-        let rect = response.rect;
-
-        let mut shapes: Vec<Shape> = Vec::with_capacity(data_width * data_height);
+        let mut image = RgbaImage::new(data_width as u32, PLOT_DEPTH as u32);
         for y in 0..data_height {
             let row = &data[y];
             for x in 0..data_width {
                 let sample = row[x];
                 let [red, green, blue] = get_color(sample.into());
-                let color = Color32::from_rgb(red, green, blue);
-                let min = Pos2 {
-                    x: rect.left() + x as f32 * size_x,
-                    y: rect.top() + (y + PLOT_DEPTH - data_height) as f32 * size_y,
-                };
+                let color = Rgba([red, green, blue, 255]);
+                let x_min = x as u32;
+                let y_min = (y + PLOT_DEPTH - data_height) as u32;
 
-                let max = Pos2 {
-                    x: min.x + size_x,
-                    y: min.y + size_y,
-                };
+                image.put_pixel(x_min, y_min, color);
 
-                let r = Shape::rect_filled(
-                    Rect { min, max },
-                    Rounding::none(),
-                    color
-                    );
-
-                shapes.push(r);
             }
         }
-        painter.extend(shapes);
+
+        let size = ui.available_size();
+
+        let color_image = ColorImage::from_rgba_unmultiplied(
+            [data_width, PLOT_DEPTH],
+            &image
+        );
+
+        let display_image = RetainedImage::from_color_image(
+            "waterfall-image",
+            color_image
+        );
+
+        display_image.show(ui);
     }
 }
