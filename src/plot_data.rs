@@ -1,4 +1,3 @@
-use rand::Rng;
 use fixed_vec_deque::FixedVecDeque;
 
 pub const PLOT_DEPTH: usize = 256;

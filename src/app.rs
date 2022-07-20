@@ -1,13 +1,13 @@
-use std::sync::{Arc, mpsc, RwLock};
+use std::sync::{mpsc, Arc, RwLock};
 use std::thread;
 
 use egui::*;
 
-use crate::plot_data::{PlotData, PlotRow, new_plot_data};
-use crate::waterfall_plot::WaterfallPlot;
-use crate::recorder::{Recorder, RecorderData};
-use crate::waterfall_processor::WaterfallProcessor;
 use crate::configuration::Configuration;
+use crate::plot_data::{new_plot_data, PlotData, PlotRow};
+use crate::recorder::{Recorder, RecorderData};
+use crate::waterfall_plot::WaterfallPlot;
+use crate::waterfall_processor::WaterfallProcessor;
 
 pub struct App {
     plot_row_rx: mpsc::Receiver<PlotRow>,
@@ -24,15 +24,12 @@ impl App {
         let (sample_tx, sample_rx) = mpsc::channel::<RecorderData>();
 
         let config = Configuration::default();
-        let edit_config = config.clone();
-        let safe_config = Arc::new(RwLock::new(config.clone()));
+        let edit_config = config;
+        let safe_config = Arc::new(RwLock::new(config));
 
         let r_config = safe_config.clone();
         thread::spawn(move || {
-            let recorder = Recorder::new(
-                sample_tx,
-                r_config,
-            );
+            let recorder = Recorder::new(sample_tx, r_config);
             recorder.start();
         });
 
@@ -52,9 +49,9 @@ impl App {
     }
 
     fn update_config(&mut self) {
-        self.config = self.edit_config.clone();
+        self.config = self.edit_config;
         let mut sf = self.safe_config.write().unwrap();
-        *sf = self.config.clone()
+        *sf = self.config;
     }
 }
 
@@ -73,15 +70,26 @@ impl eframe::App for App {
         egui::SidePanel::right("waterfall_settings")
             .resizable(false)
             .show(ctx, |ui| {
-               ui.label("Waterfall Settings");
-               egui::ComboBox::from_label("Sample Rate")
+                ui.label("Waterfall Settings");
+                egui::ComboBox::from_label("Sample Rate")
                     .selected_text(format!("{:?}", self.edit_config.audio_sample_rate))
                     .show_ui(ui, |ui| {
-                        ui.selectable_value(&mut self.edit_config.audio_sample_rate, 44100, "44.1 kHz");
-                        ui.selectable_value(&mut self.edit_config.audio_sample_rate, 48000, "48 kHz");
-                        ui.selectable_value(&mut self.edit_config.audio_sample_rate, 96000, "96 kHz");
-                    }
-                );
+                        ui.selectable_value(
+                            &mut self.edit_config.audio_sample_rate,
+                            44100,
+                            "44.1 kHz",
+                        );
+                        ui.selectable_value(
+                            &mut self.edit_config.audio_sample_rate,
+                            48000,
+                            "48 kHz",
+                        );
+                        ui.selectable_value(
+                            &mut self.edit_config.audio_sample_rate,
+                            96000,
+                            "96 kHz",
+                        );
+                    });
                 egui::ComboBox::from_label("FFT Depth")
                     .selected_text(format!("{:?}", self.edit_config.fft_depth))
                     .show_ui(ui, |ui| {
@@ -90,8 +98,7 @@ impl eframe::App for App {
                         ui.selectable_value(&mut self.edit_config.fft_depth, 4096, "4096");
                         ui.selectable_value(&mut self.edit_config.fft_depth, 8192, "8192");
                         ui.selectable_value(&mut self.edit_config.fft_depth, 16384, "16384");
-                    }
-                );
+                    });
                 egui::ComboBox::from_label("Trim (Hz)")
                     .selected_text(format!("{:?}", self.edit_config.trim_hz))
                     .show_ui(ui, |ui| {
@@ -100,12 +107,21 @@ impl eframe::App for App {
                         ui.selectable_value(&mut self.edit_config.trim_hz, 22050, "22050 Hz");
                         ui.selectable_value(&mut self.edit_config.trim_hz, 24000, "24000 Hz");
                         ui.selectable_value(&mut self.edit_config.trim_hz, 48000, "48000 Hz");
-                    }
+                    });
+                ui.add(
+                    egui::Slider::new(
+                        &mut self.edit_config.min_db,
+                        -50.0..=self.edit_config.max_db,
+                    )
+                    .text("Min dB"),
                 );
-                ui.add(egui::Slider::new(&mut self.edit_config.min_db, -50.0..=self.edit_config.max_db)
-                    .text("Min dB"));
-                ui.add(egui::Slider::new(&mut self.edit_config.max_db, self.edit_config.min_db..=100.0)
-                    .text("Max dB"));
+                ui.add(
+                    egui::Slider::new(
+                        &mut self.edit_config.max_db,
+                        self.edit_config.min_db..=100.0,
+                    )
+                    .text("Max dB"),
+                );
                 if ui.add(egui::Button::new("Apply")).clicked() {
                     self.update_config();
                 }
@@ -114,10 +130,7 @@ impl eframe::App for App {
         egui::CentralPanel::default()
             .frame(Frame::none())
             .show(ctx, |ui| {
-                let mut waterfall = WaterfallPlot::new(
-                    &mut self.plot_row_rx,
-                    &mut self.plot_data
-                );
+                let mut waterfall = WaterfallPlot::new(&mut self.plot_row_rx, &mut self.plot_data);
                 waterfall.ui(ui);
             });
 
@@ -130,7 +143,7 @@ impl eframe::App for App {
         let fft_depth = self.config.fft_depth;
         let audio_sample_rate = self.config.audio_sample_rate;
         ctx.request_repaint_after(std::time::Duration::from_millis(
-            (fft_depth as f32 / audio_sample_rate as f32 * 1000.0) as u64
+            (fft_depth as f32 / audio_sample_rate as f32 * 1000.0) as u64,
         ));
     }
 }

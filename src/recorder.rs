@@ -1,15 +1,13 @@
 use std::sync::mpsc::Sender;
 use std::sync::{Arc, RwLock};
 
-use soundio;
-
 use crate::configuration::Configuration;
 
 pub type RecorderData = f32;
 
 pub struct Recorder {
     sender: Sender<RecorderData>,
-    config: Arc<RwLock<Configuration>>,
+    // config: Arc<RwLock<Configuration>>,
     sample_rate: i32,
 }
 
@@ -19,7 +17,7 @@ impl Recorder {
 
         Self {
             sender,
-            config,
+            // config,
             sample_rate,
         }
     }
@@ -40,14 +38,13 @@ impl Recorder {
             }
 
             frames_left -= stream.frame_count();
-            if frames_left <= 0 {
+            if frames_left == 0 {
                 break;
             }
 
             stream.end_read();
         }
     }
-
 
     pub fn start(&self) {
         let mut ctx = soundio::Context::new();
@@ -65,17 +62,19 @@ impl Recorder {
             if dev.is_raw() { "raw" } else { "not raw" }
         );
 
-        let mut input_stream = dev.open_instream(
-            self.sample_rate,
-            soundio::Format::S16LE,
-            soundio::ChannelLayout::get_builtin(soundio::ChannelLayoutId::Mono),
-            0.1,
-            |x| self.read_callback(x),
-            None::<fn()>,
-            None::<fn(soundio::Error)>,
-        ).unwrap();
+        let mut input_stream = dev
+            .open_instream(
+                self.sample_rate,
+                soundio::Format::S16LE,
+                soundio::ChannelLayout::get_builtin(soundio::ChannelLayoutId::Mono),
+                0.1,
+                |x| self.read_callback(x),
+                None::<fn()>,
+                None::<fn(soundio::Error)>,
+            )
+            .unwrap();
 
-        input_stream.start();
+        input_stream.start().unwrap();
 
         loop {
             ctx.wait_events();

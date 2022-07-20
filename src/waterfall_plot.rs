@@ -1,5 +1,5 @@
-use std::sync::mpsc::Receiver;
 use std::ops::IndexMut;
+use std::sync::mpsc::Receiver;
 
 use egui::*;
 use egui_extras::image::RetainedImage;
@@ -13,8 +13,11 @@ pub struct WaterfallPlot<'a> {
 }
 
 impl<'a> WaterfallPlot<'a> {
-    pub fn new(plot_row_rx: &'a mut Receiver<PlotRow>, plot_data: &'a mut  PlotData) -> Self {
-        Self { plot_row_rx, plot_data }
+    pub fn new(plot_row_rx: &'a mut Receiver<PlotRow>, plot_data: &'a mut PlotData) -> Self {
+        Self {
+            plot_row_rx,
+            plot_data,
+        }
     }
 
     pub fn ui(&mut self, ui: &mut egui::Ui) {
@@ -44,16 +47,12 @@ impl<'a> WaterfallPlot<'a> {
                 let y_min = (y + PLOT_DEPTH - data_height) as usize;
 
                 *image.index_mut((x_min, y_min)) = color;
-
             }
         }
 
         let size = ui.available_size();
 
-        let display_image = RetainedImage::from_color_image(
-            "waterfall-image",
-            image
-        );
+        let display_image = RetainedImage::from_color_image("waterfall-image", image);
 
         display_image.show_size(ui, size);
     }

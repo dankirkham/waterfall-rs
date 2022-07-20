@@ -1,4 +1,4 @@
-use std::sync::mpsc::{Sender, Receiver};
+use std::sync::mpsc::{Receiver, Sender};
 use std::sync::{Arc, RwLock};
 
 use realfft::RealFftPlanner;
@@ -6,8 +6,8 @@ use realfft::RealToComplex;
 use rustfft::num_complex::Complex;
 
 use crate::configuration::Configuration;
-use crate::recorder::RecorderData;
 use crate::plot_data::PlotRow;
+use crate::recorder::RecorderData;
 
 pub struct WaterfallProcessor {
     receiver: Receiver<RecorderData>,
@@ -18,12 +18,22 @@ pub struct WaterfallProcessor {
 }
 
 impl WaterfallProcessor {
-    pub fn new(receiver: Receiver<RecorderData>, sender: Sender<PlotRow>, config: Arc<RwLock<Configuration>>) -> Self {
+    pub fn new(
+        receiver: Receiver<RecorderData>,
+        sender: Sender<PlotRow>,
+        config: Arc<RwLock<Configuration>>,
+    ) -> Self {
         let mut planner = RealFftPlanner::<f32>::new();
         let fft_depth = config.read().unwrap().fft_depth;
         let fft = planner.plan_fft_forward(fft_depth);
 
-        Self { receiver, sender, fft, fft_depth, config }
+        Self {
+            receiver,
+            sender,
+            fft,
+            fft_depth,
+            config,
+        }
     }
 
     pub fn start(&mut self) {
@@ -36,7 +46,7 @@ impl WaterfallProcessor {
                 min_db,
                 max_db,
                 trim_hz,
-            } = self.config.read().unwrap().clone();
+            } = *self.config.read().unwrap();
 
             if self.fft_depth != fft_depth {
                 let mut planner = RealFftPlanner::<f32>::new();
@@ -52,11 +62,14 @@ impl WaterfallProcessor {
             }
 
             let mut spectrum = self.fft.make_output_vec();
-            self.fft.process(data.as_mut_slice(), &mut spectrum);
+            self.fft
+                .process(data.as_mut_slice(), &mut spectrum)
+                .unwrap();
 
             // Bins are now Fs / N wide
             // Drop bins that are out of SSB passband
-            let new_length = (trim_hz as f32 / (audio_sample_rate as f32 / fft_depth as f32)) as usize;
+            let new_length =
+                (trim_hz as f32 / (audio_sample_rate as f32 / fft_depth as f32)) as usize;
             if new_length < fft_depth {
                 spectrum.resize(new_length, Complex::default());
             }
