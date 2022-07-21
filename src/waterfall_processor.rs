@@ -44,6 +44,13 @@ impl WaterfallProcessor {
         let fft_depth = self.config.read().unwrap().fft_depth;
         let mut data: Vec<RecorderData> = Vec::with_capacity(fft_depth);
         loop {
+            let sample = self.receiver.recv().unwrap();
+            data.push(sample);
+
+            if data.len() < fft_depth {
+                continue;
+            }
+
             let Configuration {
                 audio_sample_rate,
                 fft_depth,
@@ -73,12 +80,6 @@ impl WaterfallProcessor {
                 self.image = Some(image);
             }
 
-            let sample = self.receiver.recv().unwrap();
-            data.push(sample);
-
-            if data.len() < fft_depth {
-                continue;
-            }
 
             let mut spectrum = self.fft.make_output_vec();
             self.fft
@@ -92,29 +93,26 @@ impl WaterfallProcessor {
             let m = 255.0 / (max_db - min_db);
             let scale_func = |x| m * (x - min_db);
 
-            let image = self.image.as_ref().unwrap();
-            let mut pixels = image.pixels[new_length..].to_vec();
-            pixels.reserve(new_length);
+            let image = self.image.as_mut().unwrap();
+            image.pixels.rotate_left(new_length);
 
-            spectrum
+            let new_pixels = spectrum
                 .iter()
                 .map(|c| c.norm()) // Magnitude
                 .map(|f| f / (fft_depth as f32).sqrt()) // Normalization
                 .map(|f| 10.0 * f.log10()) // dB
-                // .map(|f| 5.1 * f + 102.0)
                 .map(scale_func)
                 .map(|f| f.clamp(0.0, 255.0))
                 .map(|f| f as usize)
                 .map(|u| get_color(u))
-                .map(|[r, g, b]| Color32::from_rgb(r, g, b))
-                .for_each(|c| pixels.push(c));
+                .map(|[r, g, b]| Color32::from_rgb(r, g, b));
 
-            let new_image = ColorImage {
-                size: image.size,
-                pixels,
-            };
-            self.sender.send(new_image.clone()).unwrap();
-            self.image = Some(new_image.to_owned());
+            let start_offset = image.pixels.len() - new_length;
+            for (i, pixel) in new_pixels.enumerate() {
+                image.pixels[start_offset + i] = pixel;
+            }
+
+            self.sender.send(self.image.as_ref().unwrap().clone()).unwrap();
 
             data.clear();
         }
