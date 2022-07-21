@@ -89,14 +89,14 @@ impl WaterfallProcessor {
                 spectrum.resize(new_length, Complex::default());
             }
 
-            // 30 dB is 255
-            // -20 dB is 0
-            // (-20, 0) -> (30, 255)
-            // y = 5.1x + 102
             let m = 255.0 / (max_db - min_db);
             let scale_func = |x| m * (x - min_db);
 
-            let normalized: Vec<u8> = spectrum
+            let image = self.image.as_ref().unwrap();
+            let mut pixels = image.pixels[new_length..].to_vec();
+            pixels.reserve(new_length);
+
+            spectrum
                 .iter()
                 .map(|c| c.norm()) // Magnitude
                 .map(|f| f / (fft_depth as f32).sqrt()) // Normalization
@@ -104,17 +104,10 @@ impl WaterfallProcessor {
                 // .map(|f| 5.1 * f + 102.0)
                 .map(scale_func)
                 .map(|f| f.clamp(0.0, 255.0))
-                .map(|f| f as u8)
-                .collect();
-
-            let image = self.image.as_ref().unwrap();
-            let mut pixels = image.pixels[new_length..].to_vec();
-            pixels.reserve(normalized.len());
-            for sample in normalized.iter() {
-                let [r, g, b] = get_color(*sample as usize);
-                let color = Color32::from_rgb(r, g, b);
-                pixels.push(color);
-            }
+                .map(|f| f as usize)
+                .map(|u| get_color(u))
+                .map(|[r, g, b]| Color32::from_rgb(r, g, b))
+                .for_each(|c| pixels.push(c));
 
             let new_image = ColorImage {
                 size: image.size,
@@ -122,7 +115,6 @@ impl WaterfallProcessor {
             };
             self.sender.send(new_image.clone()).unwrap();
             self.image = Some(new_image.to_owned());
-
 
             data.clear();
         }
