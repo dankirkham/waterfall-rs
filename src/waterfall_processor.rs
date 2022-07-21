@@ -1,26 +1,29 @@
 use std::sync::mpsc::{Receiver, Sender};
 use std::sync::{Arc, RwLock};
 
+use egui::{ColorImage, Color32};
 use realfft::RealFftPlanner;
 use realfft::RealToComplex;
 use rustfft::num_complex::Complex;
 
 use crate::configuration::Configuration;
-use crate::plot_data::PlotRow;
+use crate::plot_data::PLOT_DEPTH;
 use crate::recorder::RecorderData;
+use crate::turbo::get_color;
 
 pub struct WaterfallProcessor {
     receiver: Receiver<RecorderData>,
-    sender: Sender<PlotRow>,
+    sender: Sender<ColorImage>,
     fft: Arc<dyn RealToComplex<f32>>,
     config: Arc<RwLock<Configuration>>,
     fft_depth: usize,
+    image: Option<ColorImage>,
 }
 
 impl WaterfallProcessor {
     pub fn new(
         receiver: Receiver<RecorderData>,
-        sender: Sender<PlotRow>,
+        sender: Sender<ColorImage>,
         config: Arc<RwLock<Configuration>>,
     ) -> Self {
         let mut planner = RealFftPlanner::<f32>::new();
@@ -33,6 +36,7 @@ impl WaterfallProcessor {
             fft,
             fft_depth,
             config,
+            image: None,
         }
     }
 
@@ -54,6 +58,21 @@ impl WaterfallProcessor {
                 self.fft = planner.plan_fft_forward(self.fft_depth);
             }
 
+            // Bins are now Fs / N wide
+            // Drop bins that are out of SSB passband
+            let new_length =
+                (trim_hz as f32 / (audio_sample_rate as f32 / fft_depth as f32)) as usize;
+
+            if let Some(image) = &self.image {
+                if image.size[0] != new_length {
+                    let image = ColorImage::new([new_length, PLOT_DEPTH], Color32::default());
+                    self.image = Some(image);
+                }
+            } else {
+                let image = ColorImage::new([new_length, PLOT_DEPTH], Color32::default());
+                self.image = Some(image);
+            }
+
             let sample = self.receiver.recv().unwrap();
             data.push(sample);
 
@@ -66,10 +85,6 @@ impl WaterfallProcessor {
                 .process(data.as_mut_slice(), &mut spectrum)
                 .unwrap();
 
-            // Bins are now Fs / N wide
-            // Drop bins that are out of SSB passband
-            let new_length =
-                (trim_hz as f32 / (audio_sample_rate as f32 / fft_depth as f32)) as usize;
             if new_length < fft_depth {
                 spectrum.resize(new_length, Complex::default());
             }
@@ -92,7 +107,22 @@ impl WaterfallProcessor {
                 .map(|f| f as u8)
                 .collect();
 
-            self.sender.send(normalized).unwrap();
+            let image = self.image.as_ref().unwrap();
+            let mut pixels = image.pixels[new_length..].to_vec();
+            pixels.reserve(normalized.len());
+            for sample in normalized.iter() {
+                let [r, g, b] = get_color(*sample as usize);
+                let color = Color32::from_rgb(r, g, b);
+                pixels.push(color);
+            }
+
+            let new_image = ColorImage {
+                size: image.size,
+                pixels,
+            };
+            self.sender.send(new_image.clone()).unwrap();
+            self.image = Some(new_image.to_owned());
+
 
             data.clear();
         }

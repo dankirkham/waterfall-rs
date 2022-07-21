@@ -4,14 +4,13 @@ use std::thread;
 use egui::*;
 
 use crate::configuration::Configuration;
-use crate::plot_data::{new_plot_data, PlotData, PlotRow};
 use crate::recorder::{Recorder, RecorderData};
 use crate::waterfall_plot::WaterfallPlot;
 use crate::waterfall_processor::WaterfallProcessor;
 
 pub struct App {
-    plot_row_rx: mpsc::Receiver<PlotRow>,
-    plot_data: PlotData,
+    image_rx: mpsc::Receiver<ColorImage>,
+    image: Option<ColorImage>,
 
     safe_config: Arc<RwLock<Configuration>>,
     config: Configuration,
@@ -20,7 +19,7 @@ pub struct App {
 
 impl App {
     pub fn new(_cc: &eframe::CreationContext<'_>) -> Self {
-        let (tx, rx) = mpsc::channel::<PlotRow>();
+        let (image_tx, image_rx) = mpsc::channel::<ColorImage>();
         let (sample_tx, sample_rx) = mpsc::channel::<RecorderData>();
 
         let config = Configuration::default();
@@ -35,13 +34,13 @@ impl App {
 
         let p_config = safe_config.clone();
         thread::spawn(move || {
-            let mut processor = WaterfallProcessor::new(sample_rx, tx, p_config);
+            let mut processor = WaterfallProcessor::new(sample_rx, image_tx, p_config);
             processor.start();
         });
 
         Self {
-            plot_row_rx: rx,
-            plot_data: new_plot_data(),
+            image_rx,
+            image: None,
             config,
             edit_config,
             safe_config,
@@ -66,6 +65,10 @@ impl eframe::App for App {
         //         });
         //     });
         // });
+
+        while let Ok(im) = self.image_rx.try_recv() {
+            self.image = Some(im);
+        }
 
         egui::SidePanel::right("waterfall_settings")
             .resizable(false)
@@ -130,7 +133,7 @@ impl eframe::App for App {
         egui::CentralPanel::default()
             .frame(Frame::none())
             .show(ctx, |ui| {
-                let mut waterfall = WaterfallPlot::new(&mut self.plot_row_rx, &mut self.plot_data);
+                let mut waterfall = WaterfallPlot::new(&self.image);
                 waterfall.ui(ui);
             });
 
