@@ -2,6 +2,7 @@ use std::sync::{mpsc, Arc, RwLock};
 use std::thread;
 
 use egui::*;
+use egui_extras::image::RetainedImage;
 
 use crate::configuration::Configuration;
 use crate::recorder::{Recorder, RecorderData};
@@ -10,7 +11,7 @@ use crate::waterfall_processor::WaterfallProcessor;
 
 pub struct App {
     image_rx: mpsc::Receiver<ColorImage>,
-    image: Option<ColorImage>,
+    image: Option<RetainedImage>,
 
     safe_config: Arc<RwLock<Configuration>>,
     config: Configuration,
@@ -67,7 +68,8 @@ impl eframe::App for App {
         // });
 
         while let Ok(im) = self.image_rx.try_recv() {
-            self.image = Some(im);
+            let ri = RetainedImage::from_color_image("waterfall-image", im.to_owned());
+            self.image = Some(ri);
         }
 
         egui::SidePanel::right("waterfall_settings")
