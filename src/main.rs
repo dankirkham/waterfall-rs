@@ -5,6 +5,7 @@ mod recorder;
 mod turbo;
 mod waterfall_plot;
 mod waterfall_processor;
+mod waterfall_ticks;
 
 use app::App;
 

@@ -135,7 +135,7 @@ impl eframe::App for App {
         egui::CentralPanel::default()
             .frame(Frame::none())
             .show(ctx, |ui| {
-                let mut waterfall = WaterfallPlot::new(&self.image);
+                let mut waterfall = WaterfallPlot::new(&self.image, &self.config);
                 waterfall.ui(ui);
             });
 

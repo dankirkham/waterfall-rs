@@ -1,7 +1,7 @@
 use std::sync::mpsc::{Receiver, Sender};
 use std::sync::{Arc, RwLock};
 
-use egui::{ColorImage, Color32};
+use egui::{Color32, ColorImage};
 use realfft::RealFftPlanner;
 use realfft::RealToComplex;
 use rustfft::num_complex::Complex;
@@ -44,11 +44,13 @@ impl WaterfallProcessor {
         let fft_depth = self.config.read().unwrap().fft_depth;
         let mut data: Vec<RecorderData> = Vec::with_capacity(fft_depth);
         loop {
-            let sample = self.receiver.recv().unwrap();
-            data.push(sample);
-
-            if data.len() < fft_depth {
+            if data.len() < self.fft_depth {
+                let sample = self.receiver.recv().unwrap();
+                data.push(sample);
                 continue;
+            } else if data.len() > self.fft_depth {
+                println!("Dropping samples because of resize");
+                data.resize(self.fft_depth, 0.0);
             }
 
             let Configuration {
@@ -63,6 +65,7 @@ impl WaterfallProcessor {
                 let mut planner = RealFftPlanner::<f32>::new();
                 self.fft_depth = fft_depth;
                 self.fft = planner.plan_fft_forward(self.fft_depth);
+                continue;
             }
 
             // Bins are now Fs / N wide
@@ -79,7 +82,6 @@ impl WaterfallProcessor {
                 let image = ColorImage::new([new_length, PLOT_DEPTH], Color32::default());
                 self.image = Some(image);
             }
-
 
             let mut spectrum = self.fft.make_output_vec();
             self.fft
@@ -112,7 +114,9 @@ impl WaterfallProcessor {
                 image.pixels[start_offset + i] = pixel;
             }
 
-            self.sender.send(self.image.as_ref().unwrap().clone()).unwrap();
+            self.sender
+                .send(self.image.as_ref().unwrap().clone())
+                .unwrap();
 
             data.clear();
         }
