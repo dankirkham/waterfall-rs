@@ -127,6 +127,8 @@ impl eframe::App for App {
                     )
                     .text("Max dB"),
                 );
+                ui.add(egui::Slider::new(&mut self.edit_config.zoom, 1.0..=5.0).text("Zoom"));
+                ui.add(egui::Slider::new(&mut self.edit_config.scroll, 0.0..=1.0).text("Scroll"));
                 if ui.add(egui::Button::new("Apply")).clicked() {
                     self.update_config();
                 }

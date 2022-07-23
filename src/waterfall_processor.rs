@@ -18,6 +18,7 @@ pub struct WaterfallProcessor {
     config: Arc<RwLock<Configuration>>,
     fft_depth: usize,
     image: Option<ColorImage>,
+    scroll: f32,
 }
 
 impl WaterfallProcessor {
@@ -28,6 +29,7 @@ impl WaterfallProcessor {
     ) -> Self {
         let mut planner = RealFftPlanner::<f32>::new();
         let fft_depth = config.read().unwrap().fft_depth;
+        let scroll = config.read().unwrap().scroll;
         let fft = planner.plan_fft_forward(fft_depth);
 
         Self {
@@ -37,6 +39,7 @@ impl WaterfallProcessor {
             fft_depth,
             config,
             image: None,
+            scroll,
         }
     }
 
@@ -59,6 +62,8 @@ impl WaterfallProcessor {
                 min_db,
                 max_db,
                 trim_hz,
+                zoom,
+                scroll,
             } = *self.config.read().unwrap();
 
             if self.fft_depth != fft_depth {
@@ -76,10 +81,12 @@ impl WaterfallProcessor {
             if let Some(image) = &self.image {
                 if image.size[0] != new_length {
                     let image = ColorImage::new([new_length, PLOT_DEPTH], Color32::default());
+                    self.scroll = scroll;
                     self.image = Some(image);
                 }
             } else {
                 let image = ColorImage::new([new_length, PLOT_DEPTH], Color32::default());
+                self.scroll = scroll;
                 self.image = Some(image);
             }
 
@@ -114,9 +121,24 @@ impl WaterfallProcessor {
                 image.pixels[start_offset + i] = pixel;
             }
 
-            self.sender
-                .send(self.image.as_ref().unwrap().clone())
-                .unwrap();
+            let zoomed_length = ((new_length as f32) / zoom) as usize;
+            let scroll_start = ((new_length - zoomed_length) as f32 * scroll) as usize;
+            let scroll_stop = scroll_start + zoomed_length;
+
+            let mut cropped_pixels: Vec<Color32> = Vec::with_capacity(zoomed_length * PLOT_DEPTH);
+            for y in 0..PLOT_DEPTH {
+                let offset = y * new_length;
+                for x in scroll_start..scroll_stop {
+                    cropped_pixels.push(image.pixels[offset + x]);
+                }
+            }
+
+            let cropped_image = ColorImage {
+                size: [zoomed_length, PLOT_DEPTH],
+                pixels: cropped_pixels,
+            };
+
+            self.sender.send(cropped_image).unwrap();
 
             data.clear();
         }

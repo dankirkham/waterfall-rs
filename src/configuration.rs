@@ -10,36 +10,24 @@ pub struct Configuration {
     pub trim_hz: usize,
     // This actually can only be set at compile time
     // waterfall_depth: usize,
+
+    // [1.0, 20.0]
+    pub zoom: f32,
+
+    // [0.0, 1.0]
+    pub scroll: f32,
 }
 
-impl Configuration {
-    // pub fn spectrum_width(&self) -> usize {
-    //     self.fft_depth / 2 + 1
-    // }
-
-    // pub fn full_spectrum() -> Self {
-    //     Self {
-    //         audio_sample_rate: 44100,
-    //         fft_depth: 4096,
-    //         min_db: -20.0,
-    //         max_db: 30.0,
-    //         trim_hz: 44100,
-    //     }
-    // }
-
-    pub fn ssb_passband() -> Self {
+impl Default for Configuration {
+    fn default() -> Self {
         Self {
             audio_sample_rate: 44100,
             fft_depth: 8192,
             min_db: -40.0,
             max_db: 0.0,
             trim_hz: 4000,
+            zoom: 1.0,
+            scroll: 0.0,
         }
-    }
-}
-
-impl Default for Configuration {
-    fn default() -> Self {
-        Configuration::ssb_passband()
     }
 }
