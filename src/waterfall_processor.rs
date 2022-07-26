@@ -67,12 +67,14 @@ impl WaterfallProcessor {
 
             if let Some(image) = &self.image {
                 if image.size[0] != config.effective_len() {
-                    let image = ColorImage::new([config.effective_len(), PLOT_DEPTH], Color32::default());
+                    let image =
+                        ColorImage::new([config.effective_len(), PLOT_DEPTH], Color32::default());
                     self.scroll = config.scroll;
                     self.image = Some(image);
                 }
             } else {
-                let image = ColorImage::new([config.effective_len(), PLOT_DEPTH], Color32::default());
+                let image =
+                    ColorImage::new([config.effective_len(), PLOT_DEPTH], Color32::default());
                 self.scroll = config.scroll;
                 self.image = Some(image);
             }

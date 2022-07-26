@@ -22,7 +22,14 @@ impl<'a> WaterfallPlot<'a> {
                 .frame(Frame::none())
                 .show_inside(ui, |ui| {
                     let size = ui.available_size();
-                    image.show_size(ui, size);
+                    let response = image.show_size(ui, size);
+                    if response.hovered() {
+                        if let Some(pos) = response.hover_pos() {
+                            let interval_pos = pos.x / size.x;
+                            let hover_freq = self.config.zoomed_interval_to_hz(interval_pos);
+                            response.on_hover_text_at_pointer(hover_freq.to_string());
+                        }
+                    }
                 });
         }
     }

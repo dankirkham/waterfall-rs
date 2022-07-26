@@ -3,6 +3,7 @@ mod configuration;
 mod plot_data;
 mod recorder;
 mod turbo;
+mod units;
 mod waterfall_plot;
 mod waterfall_processor;
 mod waterfall_ticks;

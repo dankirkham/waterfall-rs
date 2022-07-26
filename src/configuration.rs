@@ -1,3 +1,5 @@
+use crate::units::Frequency;
+
 #[derive(Copy, Clone)]
 pub struct Configuration {
     pub audio_sample_rate: usize,
@@ -59,5 +61,11 @@ impl Configuration {
 
     pub fn scroll_stop(&self) -> usize {
         self.scroll_start() + self.zoomed_length()
+    }
+
+    pub fn zoomed_interval_to_hz(&self, interval: f32) -> Frequency {
+        let offset_bins = self.zoomed_length() as f32 * interval;
+        let bin = self.scroll_start() as f32 + offset_bins;
+        Frequency::Hertz(bin * self.bin_hz())
     }
 }

@@ -1,6 +1,7 @@
 use egui::*;
 
 use crate::configuration::Configuration;
+use crate::units::Frequency;
 
 pub struct WaterfallTicks<'a> {
     config: &'a Configuration,
@@ -35,19 +36,19 @@ impl<'a> WaterfallTicks<'a> {
             .default_height(34.0)
             .show_inside(ui, |ui| {
                 let color = ui.style().visuals.text_color();
-                let stroke = Stroke {
-                    width: 1.0,
-                    color,
-                };
+                let stroke = Stroke { width: 1.0, color };
                 let size = ui.available_size();
                 let rect = ui.max_rect();
-                let (_, painter) = ui.allocate_painter(size, Sense::hover());
+                let (response, painter) = ui.allocate_painter(size, Sense::hover());
+                if response.hovered() {
+                    if let Some(pos) = response.hover_pos() {
+                        let interval_pos = pos.x / size.x;
+                        let hover_freq = self.config.zoomed_interval_to_hz(interval_pos);
+                        response.on_hover_text_at_pointer(hover_freq.to_string());
+                    }
+                }
 
-                painter.rect_filled(
-                    rect,
-                    Rounding::none(),
-                    ui.style().visuals.faint_bg_color
-                );
+                painter.rect_filled(rect, Rounding::none(), ui.style().visuals.faint_bg_color);
 
                 let displayed_bandwidth = self.config.displayed_bandwidth();
                 let start_hz = self.config.start_hz();
@@ -110,13 +111,15 @@ impl<'a> WaterfallTicks<'a> {
                         align = Align2::RIGHT_TOP;
                     }
 
+                    let frequency = Frequency::Hertz(i as f32 * f_width + start_hz);
+
                     painter.text(
                         Pos2 {
                             x,
                             y: rect.top() + 18.0,
                         },
                         align,
-                        format!("{} kHz", (i as f32 * f_width + start_hz) / 1000.0),
+                        format!("{}", frequency),
                         FontId::proportional(14.0),
                         color,
                     );
