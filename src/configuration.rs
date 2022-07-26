@@ -31,3 +31,33 @@ impl Default for Configuration {
         }
     }
 }
+
+impl Configuration {
+    pub fn displayed_bandwidth(&self) -> f32 {
+        self.trim_hz as f32 / self.zoom
+    }
+
+    pub fn start_hz(&self) -> f32 {
+        ((self.trim_hz as f32) - self.displayed_bandwidth()) * self.scroll
+    }
+
+    pub fn bin_hz(&self) -> f32 {
+        self.audio_sample_rate as f32 / self.fft_depth as f32
+    }
+
+    pub fn effective_len(&self) -> usize {
+        (self.trim_hz as f32 / self.bin_hz()) as usize
+    }
+
+    pub fn zoomed_length(&self) -> usize {
+        ((self.effective_len() as f32) / self.zoom) as usize
+    }
+
+    pub fn scroll_start(&self) -> usize {
+        ((self.effective_len() - self.zoomed_length()) as f32 * self.scroll) as usize
+    }
+
+    pub fn scroll_stop(&self) -> usize {
+        self.scroll_start() + self.zoomed_length()
+    }
+}

@@ -35,16 +35,22 @@ impl<'a> WaterfallTicks<'a> {
             .default_height(34.0)
             .show_inside(ui, |ui| {
                 let color = ui.style().visuals.text_color();
-                let stroke = Stroke { width: 1.0, color };
+                let stroke = Stroke {
+                    width: 1.0,
+                    color,
+                };
                 let size = ui.available_size();
                 let rect = ui.max_rect();
                 let (_, painter) = ui.allocate_painter(size, Sense::hover());
 
-                painter.rect_filled(rect, Rounding::none(), ui.style().visuals.faint_bg_color);
+                painter.rect_filled(
+                    rect,
+                    Rounding::none(),
+                    ui.style().visuals.faint_bg_color
+                );
 
-                let displayed_bandwidth = self.config.trim_hz as f32 / self.config.zoom;
-                let start_hz =
-                    ((self.config.trim_hz as f32) - displayed_bandwidth) * self.config.scroll;
+                let displayed_bandwidth = self.config.displayed_bandwidth();
+                let start_hz = self.config.start_hz();
 
                 let (f_width, pixel_width) = tick_interval(
                     displayed_bandwidth,

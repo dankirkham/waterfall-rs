@@ -56,37 +56,24 @@ impl WaterfallProcessor {
                 data.resize(self.fft_depth, 0.0);
             }
 
-            let Configuration {
-                audio_sample_rate,
-                fft_depth,
-                min_db,
-                max_db,
-                trim_hz,
-                zoom,
-                scroll,
-            } = *self.config.read().unwrap();
+            let config = self.config.read().unwrap().clone();
 
-            if self.fft_depth != fft_depth {
+            if self.fft_depth != config.fft_depth {
                 let mut planner = RealFftPlanner::<f32>::new();
-                self.fft_depth = fft_depth;
+                self.fft_depth = config.fft_depth;
                 self.fft = planner.plan_fft_forward(self.fft_depth);
                 continue;
             }
 
-            // Bins are now Fs / N wide
-            // Drop bins that are out of SSB passband
-            let new_length =
-                (trim_hz as f32 / (audio_sample_rate as f32 / fft_depth as f32)) as usize;
-
             if let Some(image) = &self.image {
-                if image.size[0] != new_length {
-                    let image = ColorImage::new([new_length, PLOT_DEPTH], Color32::default());
-                    self.scroll = scroll;
+                if image.size[0] != config.effective_len() {
+                    let image = ColorImage::new([config.effective_len(), PLOT_DEPTH], Color32::default());
+                    self.scroll = config.scroll;
                     self.image = Some(image);
                 }
             } else {
-                let image = ColorImage::new([new_length, PLOT_DEPTH], Color32::default());
-                self.scroll = scroll;
+                let image = ColorImage::new([config.effective_len(), PLOT_DEPTH], Color32::default());
+                self.scroll = config.scroll;
                 self.image = Some(image);
             }
 
@@ -95,20 +82,20 @@ impl WaterfallProcessor {
                 .process(data.as_mut_slice(), &mut spectrum)
                 .unwrap();
 
-            if new_length < fft_depth {
-                spectrum.resize(new_length, Complex::default());
+            if config.effective_len() < self.fft_depth {
+                spectrum.resize(config.effective_len(), Complex::default());
             }
 
-            let m = 255.0 / (max_db - min_db);
-            let scale_func = |x| m * (x - min_db);
+            let m = 255.0 / (config.max_db - config.min_db);
+            let scale_func = |x| m * (x - config.min_db);
 
             let image = self.image.as_mut().unwrap();
-            image.pixels.rotate_left(new_length);
+            image.pixels.rotate_left(config.effective_len());
 
             let new_pixels = spectrum
                 .iter()
                 .map(|c| c.norm()) // Magnitude
-                .map(|f| f / (fft_depth as f32).sqrt()) // Normalization
+                .map(|f| f / (self.fft_depth as f32).sqrt()) // Normalization
                 .map(|f| 10.0 * f.log10()) // dB
                 .map(scale_func)
                 .map(|f| f.clamp(0.0, 255.0))
@@ -116,18 +103,18 @@ impl WaterfallProcessor {
                 .map(|u| get_color(u))
                 .map(|[r, g, b]| Color32::from_rgb(r, g, b));
 
-            let start_offset = image.pixels.len() - new_length;
+            let start_offset = image.pixels.len() - config.effective_len();
             for (i, pixel) in new_pixels.enumerate() {
                 image.pixels[start_offset + i] = pixel;
             }
 
-            let zoomed_length = ((new_length as f32) / zoom) as usize;
-            let scroll_start = ((new_length - zoomed_length) as f32 * scroll) as usize;
-            let scroll_stop = scroll_start + zoomed_length;
+            let zoomed_length = config.zoomed_length();
+            let scroll_start = config.scroll_start();
+            let scroll_stop = config.scroll_stop();
 
             let mut cropped_pixels: Vec<Color32> = Vec::with_capacity(zoomed_length * PLOT_DEPTH);
             for y in 0..PLOT_DEPTH {
-                let offset = y * new_length;
+                let offset = y * config.effective_len();
                 for x in scroll_start..scroll_stop {
                     cropped_pixels.push(image.pixels[offset + x]);
                 }
