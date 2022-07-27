@@ -68,4 +68,10 @@ impl Configuration {
         let bin = self.scroll_start() as f32 + offset_bins;
         Frequency::Hertz(bin * self.bin_hz())
     }
+
+    pub fn freq_to_zoom_interval(&self, f: Frequency) -> f32 {
+        let bin = (f.value() / self.bin_hz()) as i32;
+        let result = (bin - self.scroll_start() as i32) as f32 / self.zoomed_length() as f32;
+        result.clamp(0.0, 1.0)
+    }
 }

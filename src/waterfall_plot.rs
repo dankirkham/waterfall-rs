@@ -19,7 +19,7 @@ impl<'a> WaterfallPlot<'a> {
             WaterfallTicks::new(self.config).ui(ui);
 
             egui::CentralPanel::default()
-                .frame(Frame::none())
+                .frame(Frame::none().fill(ui.style().visuals.faint_bg_color))
                 .show_inside(ui, |ui| {
                     let size = ui.available_size();
                     let response = image.show_size(ui, size);

@@ -2,6 +2,7 @@ use egui::*;
 
 use crate::configuration::Configuration;
 use crate::units::Frequency;
+use crate::filter_cutoff::{FilterCutoff, FilterConnection};
 
 pub struct WaterfallTicks<'a> {
     config: &'a Configuration,
@@ -31,8 +32,29 @@ impl<'a> WaterfallTicks<'a> {
         Self { config }
     }
     pub fn ui(&mut self, ui: &mut egui::Ui) {
+        egui::TopBottomPanel::bottom("tuner-axis")
+            .frame(Frame::none().fill(ui.style().visuals.faint_bg_color))
+            .default_height(48.0)
+            .show_inside(ui, |ui| {
+                let lower = self
+                    .config
+                    .freq_to_zoom_interval(Frequency::Hertz(1000.0));
+
+                let upper = self
+                    .config
+                    .freq_to_zoom_interval(Frequency::Hertz(2000.0));
+
+                FilterConnection::new(lower, upper).ui(ui);
+                if lower > 0.0 {
+                    FilterCutoff::new(lower).ui(ui);
+                }
+                if upper < 1.0 {
+                    FilterCutoff::new(upper).ui(ui);
+                }
+            });
+
         egui::TopBottomPanel::bottom("time-axis")
-            .frame(Frame::none())
+            .frame(Frame::none().fill(ui.style().visuals.faint_bg_color))
             .default_height(34.0)
             .show_inside(ui, |ui| {
                 let color = ui.style().visuals.text_color();
@@ -48,7 +70,7 @@ impl<'a> WaterfallTicks<'a> {
                     }
                 }
 
-                painter.rect_filled(rect, Rounding::none(), ui.style().visuals.faint_bg_color);
+                // painter.rect_filled(rect, Rounding::none(), ui.style().visuals.faint_bg_color);
 
                 let displayed_bandwidth = self.config.displayed_bandwidth();
                 let start_hz = self.config.start_hz();

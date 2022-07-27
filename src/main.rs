@@ -1,5 +1,6 @@
 mod app;
 mod configuration;
+mod filter_cutoff;
 mod plot_data;
 mod recorder;
 mod turbo;
