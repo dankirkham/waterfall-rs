@@ -1,5 +1,7 @@
 use std::fmt;
+use std::ops::{Add, AddAssign, Sub};
 
+#[derive(Copy, Clone, Debug)]
 pub enum Frequency {
     Hertz(f32),
     Kilohertz(f32),
@@ -27,5 +29,27 @@ impl Frequency {
             Frequency::Kilohertz(khz) => *khz / 1_000.0,
             Frequency::Megahertz(mhz) => *mhz / 1_000_000.0,
         }
+    }
+}
+
+impl Add for Frequency {
+    type Output = Self;
+
+    fn add(self, other: Self) -> Self {
+        Self::Hertz(self.value() + other.value())
+    }
+}
+
+impl AddAssign for Frequency {
+    fn add_assign(&mut self, other: Self) {
+        *self = Self::Hertz(self.value() + other.value())
+    }
+}
+
+impl Sub for Frequency {
+    type Output = Self;
+
+    fn sub(self, other: Self) -> Self {
+        Self::Hertz(self.value() - other.value())
     }
 }

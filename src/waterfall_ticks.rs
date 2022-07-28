@@ -1,11 +1,11 @@
 use egui::*;
 
 use crate::configuration::Configuration;
+use crate::filter_cutoff::{Carrier, FilterConnection, FilterCutoffLower, FilterCutoffUpper};
 use crate::units::Frequency;
-use crate::filter_cutoff::{FilterCutoff, FilterConnection};
 
 pub struct WaterfallTicks<'a> {
-    config: &'a Configuration,
+    config: &'a mut Configuration,
 }
 
 fn tick_interval(bandwidth: f32, pixel_width: f32, target: f32) -> (f32, f32) {
@@ -28,29 +28,35 @@ fn tick_interval(bandwidth: f32, pixel_width: f32, target: f32) -> (f32, f32) {
 }
 
 impl<'a> WaterfallTicks<'a> {
-    pub fn new(config: &'a Configuration) -> Self {
+    pub fn new(config: &'a mut Configuration) -> Self {
         Self { config }
     }
+
     pub fn ui(&mut self, ui: &mut egui::Ui) {
         egui::TopBottomPanel::bottom("tuner-axis")
             .frame(Frame::none().fill(ui.style().visuals.faint_bg_color))
             .default_height(48.0)
             .show_inside(ui, |ui| {
+                let size = ui.available_size();
+
                 let lower = self
                     .config
-                    .freq_to_zoom_interval(Frequency::Hertz(1000.0));
+                    .freq_to_zoom_interval(self.config.tuner.lower_absolute());
 
                 let upper = self
                     .config
-                    .freq_to_zoom_interval(Frequency::Hertz(2000.0));
+                    .freq_to_zoom_interval(self.config.tuner.upper_absolute());
 
+                let config2 = self.config.clone();
                 FilterConnection::new(lower, upper).ui(ui);
                 if lower > 0.0 {
-                    FilterCutoff::new(lower).ui(ui);
+                    FilterCutoffLower::new(&mut self.config.tuner.lower, &config2, size.x).ui(ui);
                 }
                 if upper < 1.0 {
-                    FilterCutoff::new(upper).ui(ui);
+                    FilterCutoffUpper::new(&mut self.config.tuner.upper, &config2, size.x).ui(ui);
                 }
+
+                Carrier::new(&mut self.config.tuner.carrier, &config2, size.x).ui(ui);
             });
 
         egui::TopBottomPanel::bottom("time-axis")

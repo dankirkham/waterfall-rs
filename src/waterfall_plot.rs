@@ -6,11 +6,11 @@ use crate::waterfall_ticks::WaterfallTicks;
 
 pub struct WaterfallPlot<'a> {
     image: &'a Option<RetainedImage>,
-    config: &'a Configuration,
+    config: &'a mut Configuration,
 }
 
 impl<'a> WaterfallPlot<'a> {
-    pub fn new(image: &'a Option<RetainedImage>, config: &'a Configuration) -> Self {
+    pub fn new(image: &'a Option<RetainedImage>, config: &'a mut Configuration) -> Self {
         Self { image, config }
     }
 
