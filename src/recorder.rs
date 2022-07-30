@@ -1,5 +1,10 @@
 use std::sync::mpsc::Sender;
 use std::sync::{Arc, RwLock};
+use std::thread::sleep;
+use std::time::Duration;
+
+use cpal::Sample;
+use cpal::traits::{DeviceTrait, HostTrait, StreamTrait};
 
 use crate::configuration::Configuration;
 
@@ -22,62 +27,72 @@ impl Recorder {
         }
     }
 
-    fn read_callback(&self, stream: &mut soundio::InStreamReader) {
-        let mut frames_left = stream.frame_count_max();
+    // fn read_callback(&self, stream: &mut soundio::InStreamReader) {
+    //     let mut frames_left = stream.frame_count_max();
 
-        loop {
-            if let Err(e) = stream.begin_read(frames_left) {
-                println!("Error reading from stream: {}", e);
-                return;
-            }
-            for f in 0..stream.frame_count() {
-                for c in 0..stream.channel_count() {
-                    let sample = stream.sample::<RecorderData>(c, f);
-                    self.sender.send(sample).unwrap();
-                }
-            }
+    //     loop {
+    //         if let Err(e) = stream.begin_read(frames_left) {
+    //             println!("Error reading from stream: {}", e);
+    //             return;
+    //         }
+    //         for f in 0..stream.frame_count() {
+    //             for c in 0..stream.channel_count() {
+    //                 let sample = stream.sample::<RecorderData>(c, f);
+    //                 self.sender.send(sample).unwrap();
+    //             }
+    //         }
 
-            frames_left -= stream.frame_count();
-            if frames_left == 0 {
-                break;
-            }
+    //         frames_left -= stream.frame_count();
+    //         if frames_left == 0 {
+    //             break;
+    //         }
 
-            stream.end_read();
-        }
-    }
+    //         stream.end_read();
+    //     }
+    // }
 
     pub fn start(&self) {
-        let mut ctx = soundio::Context::new();
-        ctx.set_app_name("Waterfall");
+        let host = cpal::default_host();
 
-        ctx.connect().expect("Failed to connect to sound backend");
-        println!("Current backend: {:?}", ctx.current_backend());
+        host.input_devices()
+            .unwrap()
+            .into_iter()
+            .for_each(|d| println!("{}", d.name().unwrap()));
 
-        ctx.flush_events();
+        let device = host.default_input_device().expect("No input device");
+        println!("Using device {}", device.name().unwrap());
 
-        let dev = ctx.default_input_device().expect("No input device");
-        println!(
-            "Default input device: {} ({})",
-            dev.name(),
-            if dev.is_raw() { "raw" } else { "not raw" }
-        );
+        let mut supported_configs_range = device.supported_input_configs()
+            .expect("error while querying configs");
 
-        let mut input_stream = dev
-            .open_instream(
-                self.sample_rate,
-                soundio::Format::S16LE,
-                soundio::ChannelLayout::get_builtin(soundio::ChannelLayoutId::Mono),
-                0.1,
-                |x| self.read_callback(x),
-                None::<fn()>,
-                None::<fn(soundio::Error)>,
-            )
-            .unwrap();
+        let config = supported_configs_range.next()
+            .expect("no supported config?!")
+            .with_max_sample_rate();
 
-        input_stream.start().unwrap();
+        let err_fn = move |err| {
+            // react to errors here.
+        };
 
+        let sender = self.sender.clone();
+        let stream = match config.sample_format() {
+            cpal::SampleFormat::F32 => device.build_input_stream(
+                &config.into(),
+                move |data: &[f32], _: &_| {
+                    let samples = data.chunks(2);
+                    for sample in samples {
+                        sender.send(sample[0]).unwrap();
+                    }
+                },
+                err_fn,
+            ),
+            _ => panic!("Sample format not supported"),
+        }.expect("Unable to build stream");
+
+        stream.play().expect("Unable to play stream");
+
+        println!("Audio initialized");
         loop {
-            ctx.wait_events();
+            sleep(Duration::from_millis(500));
         }
     }
 }
