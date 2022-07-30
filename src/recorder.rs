@@ -3,7 +3,6 @@ use std::sync::{Arc, RwLock};
 use std::thread::sleep;
 use std::time::Duration;
 
-use cpal::Sample;
 use cpal::traits::{DeviceTrait, HostTrait, StreamTrait};
 
 use crate::configuration::Configuration;
@@ -11,13 +10,16 @@ use crate::configuration::Configuration;
 pub type RecorderData = f32;
 
 pub struct Recorder {
-    sender: Sender<RecorderData>,
+    sender: Sender<Vec<RecorderData>>,
     // config: Arc<RwLock<Configuration>>,
     sample_rate: i32,
 }
 
 impl Recorder {
-    pub fn new(sender: Sender<RecorderData>, config: Arc<RwLock<Configuration>>) -> Self {
+    pub fn new(
+        sender: Sender<Vec<RecorderData>>,
+        config: Arc<RwLock<Configuration>>
+    ) -> Self {
         let sample_rate = config.read().unwrap().audio_sample_rate as i32;
 
         Self {
@@ -78,10 +80,12 @@ impl Recorder {
             cpal::SampleFormat::F32 => device.build_input_stream(
                 &config.into(),
                 move |data: &[f32], _: &_| {
-                    let samples = data.chunks(2);
-                    for sample in samples {
-                        sender.send(sample[0]).unwrap();
-                    }
+                    let samples = data
+                        .into_iter()
+                        .step_by(2)
+                        .map(|x| *x)
+                        .collect();
+                    sender.send(samples);
                 },
                 err_fn,
             ),

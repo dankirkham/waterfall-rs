@@ -12,7 +12,7 @@ use crate::recorder::RecorderData;
 use crate::turbo::get_color;
 
 pub struct WaterfallProcessor {
-    receiver: Receiver<RecorderData>,
+    receiver: Receiver<Vec<RecorderData>>,
     sender: Sender<ColorImage>,
     fft: Arc<dyn RealToComplex<f32>>,
     config: Arc<RwLock<Configuration>>,
@@ -23,7 +23,7 @@ pub struct WaterfallProcessor {
 
 impl WaterfallProcessor {
     pub fn new(
-        receiver: Receiver<RecorderData>,
+        receiver: Receiver<Vec<RecorderData>>,
         sender: Sender<ColorImage>,
         config: Arc<RwLock<Configuration>>,
     ) -> Self {
@@ -48,13 +48,16 @@ impl WaterfallProcessor {
         let mut data: Vec<RecorderData> = Vec::with_capacity(fft_depth);
         loop {
             if data.len() < self.fft_depth {
-                let sample = self.receiver.recv().unwrap();
-                data.push(sample);
+                let mut samples = self.receiver.recv().unwrap();
+                data.append(&mut samples);
                 continue;
             } else if data.len() > self.fft_depth {
                 println!("Dropping samples because of resize");
                 data.resize(self.fft_depth, 0.0);
             }
+
+            // use std::time::Instant;
+            // let now = Instant::now();
 
             let config = self.config.read().unwrap().clone();
 
@@ -95,7 +98,7 @@ impl WaterfallProcessor {
             image.pixels.rotate_left(config.effective_len());
 
             let new_pixels = spectrum
-                .iter()
+                .into_iter()
                 .map(|c| c.norm()) // Magnitude
                 .map(|f| f / (self.fft_depth as f32).sqrt()) // Normalization
                 .map(|f| 10.0 * f.log10()) // dB
@@ -128,6 +131,9 @@ impl WaterfallProcessor {
             };
 
             self.sender.send(cropped_image).unwrap();
+
+            // let elapsed = now.elapsed();
+            // println!("Elapsed: {:.2?}", elapsed);
 
             data.clear();
         }

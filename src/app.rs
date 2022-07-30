@@ -20,7 +20,7 @@ pub struct App {
 impl App {
     pub fn new(_cc: &eframe::CreationContext<'_>) -> Self {
         let (image_tx, image_rx) = mpsc::channel::<ColorImage>();
-        let (sample_tx, sample_rx) = mpsc::channel::<RecorderData>();
+        let (sample_tx, sample_rx) = mpsc::channel::<Vec<RecorderData>>();
 
         let config = Configuration::default();
         let safe_config = Arc::new(RwLock::new(config));
