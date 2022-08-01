@@ -51,9 +51,18 @@ impl WaterfallProcessor {
                 let mut samples = self.receiver.recv().unwrap();
                 data.append(&mut samples);
                 continue;
-            } else if data.len() > self.fft_depth {
-                println!("Dropping samples because of resize");
-                data.resize(self.fft_depth, 0.0);
+            }
+
+            let mut samples: &mut Vec<RecorderData>;
+            let mut subset: Vec<RecorderData>;
+            if data.len() > self.fft_depth {
+                subset = Vec::with_capacity(self.fft_depth);
+                subset.extend_from_slice(&data[0..self.fft_depth]);
+                data.rotate_left(self.fft_depth);
+                data.resize(data.len() - self.fft_depth, 0.0);
+                samples = &mut subset
+            } else {
+                samples = &mut data;
             }
 
             // use std::time::Instant;
@@ -84,7 +93,7 @@ impl WaterfallProcessor {
 
             let mut spectrum = self.fft.make_output_vec();
             self.fft
-                .process(data.as_mut_slice(), &mut spectrum)
+                .process(samples.as_mut_slice(), &mut spectrum)
                 .unwrap();
 
             if config.effective_len() < self.fft_depth {
@@ -135,7 +144,7 @@ impl WaterfallProcessor {
             // let elapsed = now.elapsed();
             // println!("Elapsed: {:.2?}", elapsed);
 
-            data.clear();
+            samples.clear();
         }
     }
 }
