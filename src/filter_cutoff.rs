@@ -121,7 +121,8 @@ impl FilterConnection {
         let pos2 = self.x2 * rect.width();
         let width = pos2 - pos1;
 
-        let rect = Rect::from_x_y_ranges(pos1..=pos2, rect.top()..=(rect.top() + rect.height() / 2.0));
+        let rect =
+            Rect::from_x_y_ranges(pos1..=pos2, rect.top()..=(rect.top() + rect.height() / 2.0));
         ui.allocate_ui_at_rect(rect, |ui| {
             let size = ui.available_size();
             let rect = ui.max_rect();
@@ -151,14 +152,12 @@ impl<'a> Carrier<'a> {
         let WIDTH = 30.0;
         let rect = ui.max_rect();
 
-        let x = self
-            .config
-            .freq_to_zoom_interval(*self.f);
+        let x = self.config.freq_to_zoom_interval(*self.f);
         let pos = x * rect.width();
 
         let rect = Rect::from_center_size(
             Pos2::new(pos, rect.center().y),
-            Vec2::new(WIDTH, rect.height())
+            Vec2::new(WIDTH, rect.height()),
         );
         ui.allocate_ui_at_rect(rect, |ui| {
             let size = ui.available_size();

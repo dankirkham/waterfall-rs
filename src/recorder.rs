@@ -6,6 +6,9 @@ use std::time::Duration;
 use cpal::traits::{DeviceTrait, HostTrait, StreamTrait};
 
 use crate::configuration::Configuration;
+use crate::filter::filter::Filter;
+use crate::filter::high_pass_filter::HighPassFilter;
+use crate::units::Frequency;
 
 pub type RecorderData = f32;
 
@@ -16,10 +19,7 @@ pub struct Recorder {
 }
 
 impl Recorder {
-    pub fn new(
-        sender: Sender<Vec<RecorderData>>,
-        config: Arc<RwLock<Configuration>>
-    ) -> Self {
+    pub fn new(sender: Sender<Vec<RecorderData>>, config: Arc<RwLock<Configuration>>) -> Self {
         let sample_rate = config.read().unwrap().audio_sample_rate as i32;
 
         Self {
@@ -64,10 +64,12 @@ impl Recorder {
         let device = host.default_input_device().expect("No input device");
         println!("Using device {}", device.name().unwrap());
 
-        let mut supported_configs_range = device.supported_input_configs()
+        let mut supported_configs_range = device
+            .supported_input_configs()
             .expect("error while querying configs");
 
-        let config = supported_configs_range.next()
+        let config = supported_configs_range
+            .next()
             .expect("no supported config?!")
             .with_max_sample_rate();
 
@@ -76,21 +78,26 @@ impl Recorder {
         };
 
         let sender = self.sender.clone();
+        let mut filter = HighPassFilter::from_frequency(
+            Frequency::Hertz(300.0),
+            Frequency::Hertz(self.sample_rate as f32),
+        );
         let stream = match config.sample_format() {
             cpal::SampleFormat::F32 => device.build_input_stream(
                 &config.into(),
                 move |data: &[f32], _: &_| {
-                    let samples = data
-                        .into_iter()
-                        .step_by(2)
-                        .map(|x| *x)
-                        .collect();
-                    sender.send(samples);
+                    let mut samples = data.into_iter().step_by(2).map(|x| *x);
+
+                    let mut filtered: Vec<f32> =
+                        samples.map(|sample| filter.next(sample)).collect();
+
+                    sender.send(filtered);
                 },
                 err_fn,
             ),
             _ => panic!("Sample format not supported"),
-        }.expect("Unable to build stream");
+        }
+        .expect("Unable to build stream");
 
         stream.play().expect("Unable to play stream");
 
