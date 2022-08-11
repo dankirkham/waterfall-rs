@@ -6,7 +6,7 @@ use std::time::Duration;
 use cpal::traits::{DeviceTrait, HostTrait, StreamTrait};
 
 use crate::configuration::Configuration;
-use crate::filter::filter::Filter;
+use crate::filter::Filter;
 use crate::filter::high_pass_filter::HighPassFilter;
 use crate::units::Frequency;
 
@@ -29,30 +29,6 @@ impl Recorder {
         }
     }
 
-    // fn read_callback(&self, stream: &mut soundio::InStreamReader) {
-    //     let mut frames_left = stream.frame_count_max();
-
-    //     loop {
-    //         if let Err(e) = stream.begin_read(frames_left) {
-    //             println!("Error reading from stream: {}", e);
-    //             return;
-    //         }
-    //         for f in 0..stream.frame_count() {
-    //             for c in 0..stream.channel_count() {
-    //                 let sample = stream.sample::<RecorderData>(c, f);
-    //                 self.sender.send(sample).unwrap();
-    //             }
-    //         }
-
-    //         frames_left -= stream.frame_count();
-    //         if frames_left == 0 {
-    //             break;
-    //         }
-
-    //         stream.end_read();
-    //     }
-    // }
-
     pub fn start(&self) {
         let host = cpal::default_host();
 
@@ -73,7 +49,7 @@ impl Recorder {
             .expect("no supported config?!")
             .with_max_sample_rate();
 
-        let err_fn = move |err| {
+        let err_fn = move |_err| {
             // react to errors here.
         };
 
@@ -87,12 +63,12 @@ impl Recorder {
             cpal::SampleFormat::F32 => device.build_input_stream(
                 &config.into(),
                 move |data: &[f32], _: &_| {
-                    let mut samples = data.into_iter().step_by(2).map(|x| *x);
+                    let samples = data.iter().step_by(2).copied();
 
-                    let mut filtered: Vec<f32> =
+                    let filtered: Vec<f32> =
                         samples.map(|sample| filter.next(sample)).collect();
 
-                    sender.send(filtered);
+                    sender.send(filtered).unwrap();
                 },
                 err_fn,
             ),

@@ -1,6 +1,6 @@
 use std::f32::consts::PI;
 
-use crate::filter::filter::Filter;
+use crate::filter::Filter;
 use crate::units::Frequency;
 
 pub struct HighPassFilter {
@@ -10,6 +10,7 @@ pub struct HighPassFilter {
 }
 
 impl HighPassFilter {
+    #[allow(dead_code)]
     pub fn new(alpha: f32) -> Self {
         Self {
             prev_x: None,

@@ -1,6 +1,6 @@
 use std::f32::consts::PI;
 
-use crate::filter::filter::Filter;
+use crate::filter::Filter;
 use crate::units::Frequency;
 
 pub struct LowPassFilter {
@@ -9,6 +9,7 @@ pub struct LowPassFilter {
 }
 
 impl LowPassFilter {
+    #[allow(dead_code)]
     pub fn new(alpha: f32) -> Self {
         Self {
             prev_y: None,
@@ -16,6 +17,7 @@ impl LowPassFilter {
         }
     }
 
+    #[allow(dead_code)]
     pub fn from_frequency(cutoff: Frequency, sample_rate: Frequency) -> Self {
         let sample_period = 1.0 / sample_rate.value();
         let alpha = (2.0 * PI * sample_period * cutoff.value())

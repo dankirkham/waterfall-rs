@@ -15,7 +15,7 @@ impl<'a> FilterCutoffLower<'a> {
     }
 
     pub fn ui(&mut self, ui: &mut egui::Ui) {
-        let WIDTH = 10.0;
+        let width = 10.0;
         let rect = ui.max_rect();
 
         let x = self
@@ -32,15 +32,14 @@ impl<'a> FilterCutoffLower<'a> {
             let rect = ui.max_rect();
             let (response, painter) = ui.allocate_painter(size, Sense::drag());
 
-            let mut color: Color32;
-            if response.hovered() || response.dragged() {
-                color = ui.style().visuals.strong_text_color();
+            let color = if response.hovered() || response.dragged() {
+                ui.style().visuals.strong_text_color()
             } else {
-                color = ui.style().visuals.text_color();
-            }
+                ui.style().visuals.text_color()
+            };
 
             let stroke = Stroke { width: 1.0, color };
-            let bottom = rect.right_bottom() - Vec2::new(WIDTH, 0.0);
+            let bottom = rect.right_bottom() - Vec2::new(width, 0.0);
             painter.line_segment([rect.right_top(), bottom], stroke);
             if response.dragged() {
                 if let Some(pos) = response.hover_pos() {
@@ -66,7 +65,7 @@ impl<'a> FilterCutoffUpper<'a> {
     }
 
     pub fn ui(&mut self, ui: &mut egui::Ui) {
-        let WIDTH = 10.0;
+        let width = 10.0;
         let rect = ui.max_rect();
 
         let x = self
@@ -83,15 +82,14 @@ impl<'a> FilterCutoffUpper<'a> {
             let rect = ui.max_rect();
             let (response, painter) = ui.allocate_painter(size, Sense::drag());
 
-            let mut color: Color32;
-            if response.hovered() || response.dragged() {
-                color = ui.style().visuals.strong_text_color();
+            let color = if response.hovered() || response.dragged() {
+                ui.style().visuals.strong_text_color()
             } else {
-                color = ui.style().visuals.text_color();
-            }
+                ui.style().visuals.text_color()
+            };
 
             let stroke = Stroke { width: 1.0, color };
-            let bottom = rect.left_bottom() + Vec2::new(WIDTH, 0.0);
+            let bottom = rect.left_bottom() + Vec2::new(width, 0.0);
             painter.line_segment([rect.left_top(), bottom], stroke);
             if response.dragged() {
                 if let Some(pos) = response.hover_pos() {
@@ -119,7 +117,6 @@ impl FilterConnection {
         let rect = ui.max_rect();
         let pos1 = self.x1 * rect.width();
         let pos2 = self.x2 * rect.width();
-        let width = pos2 - pos1;
 
         let rect =
             Rect::from_x_y_ranges(pos1..=pos2, rect.top()..=(rect.top() + rect.height() / 2.0));
@@ -149,7 +146,7 @@ impl<'a> Carrier<'a> {
     }
 
     pub fn ui(&mut self, ui: &mut egui::Ui) {
-        let WIDTH = 30.0;
+        let width = 30.0;
         let rect = ui.max_rect();
 
         let x = self.config.freq_to_zoom_interval(*self.f);
@@ -157,19 +154,18 @@ impl<'a> Carrier<'a> {
 
         let rect = Rect::from_center_size(
             Pos2::new(pos, rect.center().y),
-            Vec2::new(WIDTH, rect.height()),
+            Vec2::new(width, rect.height()),
         );
         ui.allocate_ui_at_rect(rect, |ui| {
             let size = ui.available_size();
             let rect = ui.max_rect();
             let (response, painter) = ui.allocate_painter(size, Sense::drag());
 
-            let mut color: Color32;
-            if response.hovered() || response.dragged() {
-                color = ui.style().visuals.strong_text_color();
+            let color = if response.hovered() || response.dragged() {
+                ui.style().visuals.strong_text_color()
             } else {
-                color = ui.style().visuals.text_color();
-            }
+                ui.style().visuals.text_color()
+            };
 
             let stroke = Stroke { width: 3.0, color };
             painter.line_segment([rect.center_top(), rect.center_bottom()], stroke);

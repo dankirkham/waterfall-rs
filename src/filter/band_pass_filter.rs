@@ -1,4 +1,4 @@
-use crate::filter::filter::Filter;
+use crate::filter::Filter;
 use crate::filter::high_pass_filter::HighPassFilter;
 use crate::filter::low_pass_filter::LowPassFilter;
 use crate::units::Frequency;
@@ -9,6 +9,7 @@ pub struct BandPassFilter {
 }
 
 impl BandPassFilter {
+    #[allow(dead_code)]
     pub fn from_frequency(
         low_cutoff: Frequency,
         high_cutoff: Frequency,

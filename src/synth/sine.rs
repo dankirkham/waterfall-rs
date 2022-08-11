@@ -1,5 +1,6 @@
 use std::f32::consts::PI;
 
+use crate::synth::samples::Samples;
 use crate::units::Frequency;
 
 pub struct Sine {
@@ -10,6 +11,7 @@ pub struct Sine {
 }
 
 impl Sine {
+    #[allow(dead_code)]
     pub fn new(sample_rate: Frequency, frequency: Frequency, amplitude: f32) -> Self {
         Self {
             sample_rate,
@@ -18,8 +20,10 @@ impl Sine {
             sample: 0,
         }
     }
+}
 
-    pub fn next(&mut self) -> f32 {
+impl Samples for Sine {
+    fn next(&mut self) -> f32 {
         let t = (self.sample as f32) / self.sample_rate.value();
 
         let val = self.amplitude * (2.0 * PI * self.frequency.value() * t).sin();

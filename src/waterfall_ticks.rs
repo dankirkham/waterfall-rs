@@ -47,7 +47,7 @@ impl<'a> WaterfallTicks<'a> {
                     .config
                     .freq_to_zoom_interval(self.config.tuner.upper_absolute());
 
-                let config2 = self.config.clone();
+                let config2 = *self.config;
                 FilterConnection::new(lower, upper).ui(ui);
                 if lower > 0.0 {
                     FilterCutoffLower::new(&mut self.config.tuner.lower, &config2, size.x).ui(ui);

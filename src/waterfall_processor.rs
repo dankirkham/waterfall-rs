@@ -53,22 +53,21 @@ impl WaterfallProcessor {
                 continue;
             }
 
-            let mut samples: &mut Vec<RecorderData>;
             let mut subset: Vec<RecorderData>;
-            if data.len() > self.fft_depth {
+            let samples = if data.len() > self.fft_depth {
                 subset = Vec::with_capacity(self.fft_depth);
                 subset.extend_from_slice(&data[0..self.fft_depth]);
                 data.rotate_left(self.fft_depth);
                 data.resize(data.len() - self.fft_depth, 0.0);
-                samples = &mut subset
+                &mut subset
             } else {
-                samples = &mut data;
-            }
+                &mut data
+            };
 
             // use std::time::Instant;
             // let now = Instant::now();
 
-            let config = self.config.read().unwrap().clone();
+            let config = *self.config.read().unwrap();
 
             if self.fft_depth != config.fft_depth {
                 let mut planner = RealFftPlanner::<f32>::new();
@@ -114,7 +113,7 @@ impl WaterfallProcessor {
                 .map(scale_func)
                 .map(|f| f.clamp(0.0, 255.0))
                 .map(|f| f as usize)
-                .map(|u| get_color(u))
+                .map(get_color)
                 .map(|[r, g, b]| Color32::from_rgb(r, g, b));
 
             let start_offset = image.pixels.len() - config.effective_len();
