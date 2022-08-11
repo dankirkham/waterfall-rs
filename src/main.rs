@@ -4,6 +4,7 @@ mod filter;
 mod filter_cutoff;
 mod plot_data;
 mod recorder;
+mod synth;
 mod turbo;
 mod units;
 mod waterfall_plot;

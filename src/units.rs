@@ -26,8 +26,8 @@ impl Frequency {
     pub fn value(&self) -> f32 {
         match self {
             Frequency::Hertz(hz) => *hz,
-            Frequency::Kilohertz(khz) => *khz / 1_000.0,
-            Frequency::Megahertz(mhz) => *mhz / 1_000_000.0,
+            Frequency::Kilohertz(khz) => *khz * 1_000.0,
+            Frequency::Megahertz(mhz) => *mhz * 1_000_000.0,
         }
     }
 }

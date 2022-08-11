@@ -82,6 +82,7 @@ impl Recorder {
             Frequency::Hertz(300.0),
             Frequency::Hertz(self.sample_rate as f32),
         );
+
         let stream = match config.sample_format() {
             cpal::SampleFormat::F32 => device.build_input_stream(
                 &config.into(),
