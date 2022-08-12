@@ -1,6 +1,6 @@
-use crate::filter::Filter;
 use crate::filter::high_pass_filter::HighPassFilter;
 use crate::filter::low_pass_filter::LowPassFilter;
+use crate::filter::Filter;
 use crate::units::Frequency;
 
 pub struct BandPassFilter {

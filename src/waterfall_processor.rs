@@ -7,9 +7,12 @@ use realfft::RealToComplex;
 use rustfft::num_complex::Complex;
 
 use crate::configuration::Configuration;
+use crate::filter::{BandPassFilter, Filter, LowPassFilter};
 use crate::plot_data::PLOT_DEPTH;
 use crate::recorder::RecorderData;
+use crate::synth::{Samples, Sine};
 use crate::turbo::get_color;
+use crate::units::Frequency;
 
 pub struct WaterfallProcessor {
     receiver: Receiver<Vec<RecorderData>>,
@@ -76,74 +79,107 @@ impl WaterfallProcessor {
                 continue;
             }
 
-            if let Some(image) = &self.image {
-                if image.size[0] != config.effective_len() {
-                    let image =
-                        ColorImage::new([config.effective_len(), PLOT_DEPTH], Color32::default());
-                    self.scroll = config.scroll;
-                    self.image = Some(image);
-                }
-            } else {
+            self.run_receiver(samples.clone());
+            self.run_fft(samples);
+        }
+    }
+
+    fn run_fft(&mut self, samples: &mut Vec<RecorderData>) {
+        let config = *self.config.read().unwrap();
+
+        if let Some(image) = &self.image {
+            if image.size[0] != config.effective_len() {
                 let image =
                     ColorImage::new([config.effective_len(), PLOT_DEPTH], Color32::default());
                 self.scroll = config.scroll;
                 self.image = Some(image);
             }
-
-            let mut spectrum = self.fft.make_output_vec();
-            self.fft
-                .process(samples.as_mut_slice(), &mut spectrum)
-                .unwrap();
-
-            if config.effective_len() < self.fft_depth {
-                spectrum.resize(config.effective_len(), Complex::default());
-            }
-
-            let m = 255.0 / (config.max_db - config.min_db);
-            let scale_func = |x| m * (x - config.min_db);
-
-            let image = self.image.as_mut().unwrap();
-            image.pixels.rotate_left(config.effective_len());
-
-            let new_pixels = spectrum
-                .into_iter()
-                .map(|c| c.norm()) // Magnitude
-                .map(|f| f / (self.fft_depth as f32).sqrt()) // Normalization
-                .map(|f| 10.0 * f.log10()) // dB
-                .map(scale_func)
-                .map(|f| f.clamp(0.0, 255.0))
-                .map(|f| f as usize)
-                .map(get_color)
-                .map(|[r, g, b]| Color32::from_rgb(r, g, b));
-
-            let start_offset = image.pixels.len() - config.effective_len();
-            for (i, pixel) in new_pixels.enumerate() {
-                image.pixels[start_offset + i] = pixel;
-            }
-
-            let zoomed_length = config.zoomed_length();
-            let scroll_start = config.scroll_start();
-            let scroll_stop = config.scroll_stop();
-
-            let mut cropped_pixels: Vec<Color32> = Vec::with_capacity(zoomed_length * PLOT_DEPTH);
-            for y in 0..PLOT_DEPTH {
-                let offset = y * config.effective_len();
-                for x in scroll_start..scroll_stop {
-                    cropped_pixels.push(image.pixels[offset + x]);
-                }
-            }
-
-            let cropped_image = ColorImage {
-                size: [zoomed_length, PLOT_DEPTH],
-                pixels: cropped_pixels,
-            };
-
-            self.sender.send(cropped_image).unwrap();
-
-            // let elapsed = now.elapsed();
-            // println!("Elapsed: {:.2?}", elapsed);
-
-            samples.clear();
+        } else {
+            let image = ColorImage::new([config.effective_len(), PLOT_DEPTH], Color32::default());
+            self.scroll = config.scroll;
+            self.image = Some(image);
         }
+
+        let mut spectrum = self.fft.make_output_vec();
+        self.fft
+            .process(samples.as_mut_slice(), &mut spectrum)
+            .unwrap();
+
+        if config.effective_len() < self.fft_depth {
+            spectrum.resize(config.effective_len(), Complex::default());
+        }
+
+        let m = 255.0 / (config.max_db - config.min_db);
+        let scale_func = |x| m * (x - config.min_db);
+
+        let image = self.image.as_mut().unwrap();
+        image.pixels.rotate_left(config.effective_len());
+
+        let new_pixels = spectrum
+            .into_iter()
+            .map(|c| c.norm()) // Magnitude
+            .map(|f| f / (self.fft_depth as f32).sqrt()) // Normalization
+            .map(|f| 10.0 * f.log10()) // dB
+            .map(scale_func)
+            .map(|f| f.clamp(0.0, 255.0))
+            .map(|f| f as usize)
+            .map(get_color)
+            .map(|[r, g, b]| Color32::from_rgb(r, g, b));
+
+        let start_offset = image.pixels.len() - config.effective_len();
+        for (i, pixel) in new_pixels.enumerate() {
+            image.pixels[start_offset + i] = pixel;
+        }
+
+        let zoomed_length = config.zoomed_length();
+        let scroll_start = config.scroll_start();
+        let scroll_stop = config.scroll_stop();
+
+        let mut cropped_pixels: Vec<Color32> = Vec::with_capacity(zoomed_length * PLOT_DEPTH);
+        for y in 0..PLOT_DEPTH {
+            let offset = y * config.effective_len();
+            for x in scroll_start..scroll_stop {
+                cropped_pixels.push(image.pixels[offset + x]);
+            }
+        }
+
+        let cropped_image = ColorImage {
+            size: [zoomed_length, PLOT_DEPTH],
+            pixels: cropped_pixels,
+        };
+
+        self.sender.send(cropped_image).unwrap();
+
+        // let elapsed = now.elapsed();
+        // println!("Elapsed: {:.2?}", elapsed);
+
+        samples.clear();
+    }
+
+    fn run_receiver(&mut self, samples: Vec<RecorderData>) {
+        let config = *self.config.read().unwrap();
+        let sample_rate = Frequency::Hertz(config.audio_sample_rate as f32);
+
+        // Bandpass
+        let mut bpf = BandPassFilter::from_frequency(
+            config.tuner.lower_absolute(), // Low
+            config.tuner.upper_absolute(), // High
+            sample_rate,                   // SampleRate
+        );
+        let bandpassed = samples.into_iter().map(|sample| bpf.next(sample));
+
+        // LCO Mix
+        let mut carrier = Sine::new(sample_rate, config.tuner.carrier);
+        let mixed = bandpassed.map(|sample| sample * carrier.next());
+
+        // Low Pass
+        let mut lpf = LowPassFilter::from_frequency(
+            Frequency::Hertz(500.0),
+            sample_rate, // SampleRate
+        );
+        let low_passed = mixed.map(|sample| lpf.next(sample));
+
+        // Collect into signal
+        let signal: Vec<RecorderData> = low_passed.collect();
     }
 }

@@ -1,3 +1,6 @@
-pub mod mixer;
-pub mod samples;
-pub mod sine;
+mod mixer;
+mod samples;
+mod sine;
+
+pub use samples::Samples;
+pub use sine::Sine;

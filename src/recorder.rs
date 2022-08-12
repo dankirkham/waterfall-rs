@@ -7,7 +7,7 @@ use cpal::traits::{DeviceTrait, HostTrait, StreamTrait};
 
 use crate::configuration::Configuration;
 use crate::filter::Filter;
-use crate::filter::high_pass_filter::HighPassFilter;
+use crate::filter::HighPassFilter;
 use crate::units::Frequency;
 
 pub type RecorderData = f32;
@@ -65,8 +65,7 @@ impl Recorder {
                 move |data: &[f32], _: &_| {
                     let samples = data.iter().step_by(2).copied();
 
-                    let filtered: Vec<f32> =
-                        samples.map(|sample| filter.next(sample)).collect();
+                    let filtered: Vec<f32> = samples.map(|sample| filter.next(sample)).collect();
 
                     sender.send(filtered).unwrap();
                 },

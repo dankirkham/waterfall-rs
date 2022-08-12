@@ -11,8 +11,11 @@ pub struct Sine {
 }
 
 impl Sine {
-    #[allow(dead_code)]
-    pub fn new(sample_rate: Frequency, frequency: Frequency, amplitude: f32) -> Self {
+    pub fn new(sample_rate: Frequency, frequency: Frequency) -> Self {
+        Self::with_amplitude(sample_rate, frequency, 0.001)
+    }
+
+    pub fn with_amplitude(sample_rate: Frequency, frequency: Frequency, amplitude: f32) -> Self {
         Self {
             sample_rate,
             frequency,
