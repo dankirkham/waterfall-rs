@@ -2,15 +2,11 @@ mod app;
 mod configuration;
 mod dsp;
 mod filter;
-mod filter_cutoff;
 mod plot_data;
 mod recorder;
 mod synth;
-mod turbo;
+mod ui;
 mod units;
-mod waterfall_plot;
-mod waterfall_processor;
-mod waterfall_ticks;
 
 use app::App;
 

@@ -5,9 +5,9 @@ use egui::*;
 use egui_extras::image::RetainedImage;
 
 use crate::configuration::Configuration;
+use crate::dsp::WaterfallProcessor;
 use crate::recorder::{Recorder, RecorderData};
-use crate::waterfall_plot::WaterfallPlot;
-use crate::waterfall_processor::WaterfallProcessor;
+use crate::ui::WaterfallPlot;
 
 pub struct App {
     image_rx: mpsc::Receiver<ColorImage>,

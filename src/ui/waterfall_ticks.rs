@@ -1,7 +1,7 @@
 use egui::*;
 
 use crate::configuration::Configuration;
-use crate::filter_cutoff::{Carrier, FilterConnection, FilterCutoffLower, FilterCutoffUpper};
+use crate::ui::filter_cutoff::{Carrier, FilterConnection, FilterCutoffLower, FilterCutoffUpper};
 use crate::units::Frequency;
 
 pub struct WaterfallTicks<'a> {

@@ -4,7 +4,7 @@ pub fn correlate(a: &[RecorderData], b: &[RecorderData]) -> Vec<RecorderData> {
     let a_len: i32 = a.len().try_into().unwrap();
     let b_len: i32 = b.len().try_into().unwrap();
     let mut result: Vec<RecorderData> = Vec::with_capacity(a.len() + b.len() - 1);
-    for p in (-1 * b_len + 1)..a_len {
+    for p in (-b_len + 1)..a_len {
         let left =  p.max(0);
         let right = (b_len + p).min(a_len);
         let mut sum = 0.0;

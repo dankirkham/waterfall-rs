@@ -32,7 +32,7 @@ impl Ft8 {
 
 impl Samples for Ft8 {
     fn next(&mut self) -> f32 {
-        if self.sample <= 0 {
+        if self.sample == 0 {
             let signaling_interval = 0.160;
             self.sample = (self.sample_rate.value() * signaling_interval) as u64;
 

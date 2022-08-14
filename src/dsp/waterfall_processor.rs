@@ -11,8 +11,9 @@ use crate::filter::{BandPassFilter, Filter, LowPassFilter};
 use crate::plot_data::PLOT_DEPTH;
 use crate::recorder::RecorderData;
 use crate::synth::{Samples, Sine};
-use crate::turbo::get_color;
 use crate::units::Frequency;
+
+use super::turbo::get_color;
 
 pub struct WaterfallProcessor {
     receiver: Receiver<Vec<RecorderData>>,

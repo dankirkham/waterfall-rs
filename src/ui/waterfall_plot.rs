@@ -2,7 +2,7 @@ use egui::*;
 use egui_extras::image::RetainedImage;
 
 use crate::configuration::Configuration;
-use crate::waterfall_ticks::WaterfallTicks;
+use crate::ui::WaterfallTicks;
 
 pub struct WaterfallPlot<'a> {
     image: &'a Option<RetainedImage>,
