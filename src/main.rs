@@ -1,5 +1,6 @@
 mod app;
 mod configuration;
+mod dsp;
 mod filter;
 mod filter_cutoff;
 mod plot_data;
