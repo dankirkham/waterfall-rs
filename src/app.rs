@@ -7,7 +7,7 @@ use egui_extras::image::RetainedImage;
 use crate::configuration::Configuration;
 use crate::dsp::WaterfallProcessor;
 use crate::recorder::{Recorder, RecorderData};
-use crate::ui::WaterfallPlot;
+use crate::ui::{Scope, WaterfallPlot};
 
 pub struct App {
     image_rx: mpsc::Receiver<ColorImage>,
@@ -15,12 +15,16 @@ pub struct App {
 
     safe_config: Arc<RwLock<Configuration>>,
     config: Configuration,
+
+    plot_rx: mpsc::Receiver<Vec<RecorderData>>,
+    plot_data: Vec<RecorderData>,
 }
 
 impl App {
     pub fn new(_cc: &eframe::CreationContext<'_>) -> Self {
         let (image_tx, image_rx) = mpsc::channel::<ColorImage>();
         let (sample_tx, sample_rx) = mpsc::channel::<Vec<RecorderData>>();
+        let (plot_tx, plot_rx) = mpsc::channel::<Vec<RecorderData>>();
 
         let config = Configuration::default();
         let safe_config = Arc::new(RwLock::new(config));
@@ -33,7 +37,7 @@ impl App {
 
         let p_config = safe_config.clone();
         thread::spawn(move || {
-            let mut processor = WaterfallProcessor::new(sample_rx, image_tx, p_config);
+            let mut processor = WaterfallProcessor::new(sample_rx, image_tx, plot_tx, p_config);
             processor.start();
         });
 
@@ -42,6 +46,9 @@ impl App {
             image: None,
             config,
             safe_config,
+
+            plot_rx,
+            plot_data: Vec::new(),
         }
     }
 
@@ -67,6 +74,15 @@ impl eframe::App for App {
             let ri = RetainedImage::from_color_image("waterfall-image", im.to_owned());
             self.image = Some(ri);
         }
+
+        while let Ok(plot_data) = self.plot_rx.try_recv() {
+            self.plot_data = plot_data;
+        }
+
+        egui::Window::new("Scope").show(ctx, |ui| {
+            let mut scope = Scope::new(&self.plot_data);
+            scope.ui(ui);
+        });
 
         egui::SidePanel::right("waterfall_settings")
             .resizable(false)

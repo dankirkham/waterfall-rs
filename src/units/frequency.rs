@@ -4,7 +4,7 @@ use std::ops::{Add, AddAssign, Sub};
 #[derive(Copy, Clone, Debug)]
 pub enum Frequency {
     Hertz(f32),
-    // Kilohertz(f32),
+    Kilohertz(f32),
     // Megahertz(f32),
 }
 
@@ -26,7 +26,7 @@ impl Frequency {
     pub fn value(&self) -> f32 {
         match self {
             Frequency::Hertz(hz) => *hz,
-            // Frequency::Kilohertz(khz) => *khz * 1_000.0,
+            Frequency::Kilohertz(khz) => *khz * 1_000.0,
             // Frequency::Megahertz(mhz) => *mhz * 1_000_000.0,
         }
     }

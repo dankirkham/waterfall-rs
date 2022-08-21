@@ -17,14 +17,15 @@ impl Ft8 {
     pub fn new(sample_rate: Frequency, carrier: Frequency) -> Self {
         let signaling_interval = 0.160;
         let symbol = 0;
-        let synth = Symbol::new(sample_rate, carrier, symbol as f32);
+        let amplitude = 0.005;
+        let synth = Symbol::with_amplitude(sample_rate, carrier, symbol as f32, amplitude);
 
         Self {
             sample_rate,
             carrier,
             sample: (sample_rate.value() * signaling_interval) as u64,
             symbol,
-            amplitude: 0.001,
+            amplitude,
             synth,
         }
     }
@@ -36,15 +37,22 @@ impl Samples for Ft8 {
             let signaling_interval = 0.160;
             self.sample = (self.sample_rate.value() * signaling_interval) as u64;
 
-            // self.symbol += 1;
-            // if self.symbol > 7 {
-            //     self.symbol = 0;
-            // }
+            self.symbol += 1;
+            if self.symbol > 7 {
+                self.symbol = 0;
+            }
+
+            println!("--> Symbol:  {}", self.symbol);
 
             let mut rng = rand::thread_rng();
-            self.symbol = rng.gen_range(0..8);
+            // self.symbol = rng.gen_range(0..8);
 
-            self.synth = Symbol::new(self.sample_rate, self.carrier, self.symbol as f32);
+            self.synth = Symbol::with_amplitude(
+                self.sample_rate,
+                self.carrier,
+                self.symbol as f32,
+                self.amplitude,
+            );
         }
 
         self.sample -= 1;

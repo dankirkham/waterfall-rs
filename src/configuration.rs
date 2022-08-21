@@ -10,6 +10,7 @@ pub struct Configuration {
     // Trim FFT output to this frequency. Lets you trim out unnecessary data
     // when the audio_sample_rate is much higher than needed.
     pub trim_hz: usize,
+
     // This actually can only be set at compile time
     // waterfall_depth: usize,
 
@@ -89,9 +90,9 @@ pub struct TunerSettings {
 impl Default for TunerSettings {
     fn default() -> Self {
         TunerSettings {
-            lower: Frequency::Hertz(-1100.0),
-            upper: Frequency::Hertz(-100.0),
-            carrier: Frequency::Hertz(2000.0),
+            lower: Frequency::Hertz(0.0),
+            upper: Frequency::Hertz(160.0),
+            carrier: Frequency::Hertz(2500.0),
         }
     }
 }

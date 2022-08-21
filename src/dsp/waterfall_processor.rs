@@ -7,11 +7,10 @@ use realfft::RealToComplex;
 use rustfft::num_complex::Complex;
 
 use crate::configuration::Configuration;
-use crate::filter::{BandPassFilter, Filter, LowPassFilter};
 use crate::plot_data::PLOT_DEPTH;
 use crate::recorder::RecorderData;
-use crate::synth::{Samples, Sine};
-use crate::units::Frequency;
+
+use super::rx::Rx;
 
 use super::turbo::get_color;
 
@@ -23,18 +22,21 @@ pub struct WaterfallProcessor {
     fft_depth: usize,
     image: Option<ColorImage>,
     scroll: f32,
+    rx: Rx,
 }
 
 impl WaterfallProcessor {
     pub fn new(
         receiver: Receiver<Vec<RecorderData>>,
         sender: Sender<ColorImage>,
+        plot: Sender<Vec<RecorderData>>,
         config: Arc<RwLock<Configuration>>,
     ) -> Self {
         let mut planner = RealFftPlanner::<f32>::new();
         let fft_depth = config.read().unwrap().fft_depth;
         let scroll = config.read().unwrap().scroll;
         let fft = planner.plan_fft_forward(fft_depth);
+        let rx = Rx::new(plot);
 
         Self {
             receiver,
@@ -44,6 +46,7 @@ impl WaterfallProcessor {
             config,
             image: None,
             scroll,
+            rx,
         }
     }
 
@@ -80,7 +83,7 @@ impl WaterfallProcessor {
                 continue;
             }
 
-            self.run_receiver(samples.clone());
+            self.rx.run(samples.clone(), config.clone());
             self.run_fft(samples);
         }
     }
@@ -155,32 +158,5 @@ impl WaterfallProcessor {
         // println!("Elapsed: {:.2?}", elapsed);
 
         samples.clear();
-    }
-
-    fn run_receiver(&mut self, samples: Vec<RecorderData>) {
-        let config = *self.config.read().unwrap();
-        let sample_rate = Frequency::Hertz(config.audio_sample_rate as f32);
-
-        // Bandpass
-        let mut bpf = BandPassFilter::from_frequency(
-            config.tuner.lower_absolute(), // Low
-            config.tuner.upper_absolute(), // High
-            sample_rate,                   // SampleRate
-        );
-        let bandpassed = samples.into_iter().map(|sample| bpf.next(sample));
-
-        // LCO Mix
-        let mut carrier = Sine::new(sample_rate, config.tuner.carrier);
-        let mixed = bandpassed.map(|sample| sample * carrier.next());
-
-        // Low Pass
-        let mut lpf = LowPassFilter::from_frequency(
-            Frequency::Hertz(500.0),
-            sample_rate, // SampleRate
-        );
-        let low_passed = mixed.map(|sample| lpf.next(sample));
-
-        // Collect into signal
-        let signal: Vec<RecorderData> = low_passed.collect();
     }
 }

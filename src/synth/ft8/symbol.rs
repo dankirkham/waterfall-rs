@@ -13,12 +13,21 @@ pub struct Symbol {
 
 impl Symbol {
     pub fn new(sample_rate: Frequency, carrier: Frequency, symbol: f32) -> Self {
+        Symbol::with_amplitude(sample_rate, carrier, symbol, 0.005)
+    }
+
+    pub fn with_amplitude(
+        sample_rate: Frequency,
+        carrier: Frequency,
+        symbol: f32,
+        amplitude: f32,
+    ) -> Self {
         Self {
             sample_rate,
             carrier,
             sample: 0,
             symbol,
-            amplitude: 0.005,
+            amplitude,
         }
     }
 }

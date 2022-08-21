@@ -8,6 +8,7 @@ use cpal::traits::{DeviceTrait, HostTrait, StreamTrait};
 use crate::configuration::Configuration;
 use crate::filter::Filter;
 use crate::filter::HighPassFilter;
+use crate::synth::{Ft8, Samples};
 use crate::units::Frequency;
 
 pub type RecorderData = f32;
@@ -15,12 +16,12 @@ pub type RecorderData = f32;
 pub struct Recorder {
     sender: Sender<Vec<RecorderData>>,
     // config: Arc<RwLock<Configuration>>,
-    sample_rate: i32,
+    sample_rate: Frequency,
 }
 
 impl Recorder {
     pub fn new(sender: Sender<Vec<RecorderData>>, config: Arc<RwLock<Configuration>>) -> Self {
-        let sample_rate = config.read().unwrap().audio_sample_rate as i32;
+        let sample_rate = Frequency::Hertz(config.read().unwrap().audio_sample_rate as f32);
 
         Self {
             sender,
@@ -54,10 +55,9 @@ impl Recorder {
         };
 
         let sender = self.sender.clone();
-        let mut filter = HighPassFilter::from_frequency(
-            Frequency::Hertz(300.0),
-            Frequency::Hertz(self.sample_rate as f32),
-        );
+        let mut filter = HighPassFilter::from_frequency(Frequency::Hertz(300.0), self.sample_rate);
+
+        let mut ft8 = Ft8::new(self.sample_rate, Frequency::Hertz(100.0));
 
         let stream = match config.sample_format() {
             cpal::SampleFormat::F32 => device.build_input_stream(
@@ -66,6 +66,7 @@ impl Recorder {
                     let samples = data.iter().step_by(2).copied();
 
                     let filtered: Vec<f32> = samples.map(|sample| filter.next(sample)).collect();
+                    // let filtered: Vec<f32> = samples.map(|sample| ft8.next()).collect();
 
                     sender.send(filtered).unwrap();
                 },
