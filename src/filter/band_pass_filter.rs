@@ -9,7 +9,6 @@ pub struct BandPassFilter {
 }
 
 impl BandPassFilter {
-    #[allow(dead_code)]
     pub fn from_frequency(
         low_cutoff: Frequency,
         high_cutoff: Frequency,

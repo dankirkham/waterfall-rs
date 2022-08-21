@@ -1,5 +1,4 @@
 mod ft8;
-mod mixer;
 mod samples;
 mod sine;
 

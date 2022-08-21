@@ -3,7 +3,13 @@ extern crate test;
 #[cfg(test)]
 mod tests {
     use super::*;
-    use test::{black_box, Bencher};
+
+    use test::Bencher;
+
+    use rand::Rng;
+
+    use crate::dsp::correlation::correlate;
+    use crate::recorder::RecorderData;
 
     #[bench]
     fn bench_correlate(b: &mut Bencher) {

@@ -1,6 +1,3 @@
-use std::mem;
-use std::sync::mpsc::Sender;
-
 use crate::configuration::Configuration;
 use crate::filter::{BandPassFilter, Filter, LowPassFilter};
 use crate::recorder::RecorderData;
@@ -12,13 +9,12 @@ use super::correlation::correlate;
 
 pub struct Rx {
     symbols: Vec<Vec<RecorderData>>,
-    plot: Sender<Vec<RecorderData>>,
     buffer_len: usize,
     data: Vec<RecorderData>,
 }
 
 impl Rx {
-    pub fn new(plot: Sender<Vec<RecorderData>>) -> Self {
+    pub fn new() -> Self {
         let mut symbols: Vec<Vec<RecorderData>> = Vec::with_capacity(8);
 
         let sample_rate = Frequency::Hertz(44100.0);
@@ -37,7 +33,6 @@ impl Rx {
         }
         Self {
             symbols,
-            plot,
             buffer_len,
             data,
         }
@@ -90,11 +85,7 @@ impl Rx {
             for symbol in 0..8 {
                 let syn = &self.symbols[symbol];
 
-                let c = correlate(&signal, &syn, true);
-
-                if symbol == 0 {
-                    self.plot.send(signal.clone());
-                }
+                let c = correlate(&signal, syn, true);
 
                 let max = c
                     .into_iter()
@@ -110,7 +101,7 @@ impl Rx {
                 // println!("{}: {}", symbol, max);
             }
 
-            // println!("Decoded: {} ({})", max_symbol, total_max);
+            println!("Decoded: {} ({})", max_symbol, total_max);
         }
     }
 }

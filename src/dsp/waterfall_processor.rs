@@ -23,20 +23,21 @@ pub struct WaterfallProcessor {
     image: Option<ColorImage>,
     scroll: f32,
     rx: Rx,
+    // plot: Sender<Vec<RecorderData>>,
 }
 
 impl WaterfallProcessor {
     pub fn new(
         receiver: Receiver<Vec<RecorderData>>,
         sender: Sender<ColorImage>,
-        plot: Sender<Vec<RecorderData>>,
+        _plot: Sender<Vec<RecorderData>>,
         config: Arc<RwLock<Configuration>>,
     ) -> Self {
         let mut planner = RealFftPlanner::<f32>::new();
         let fft_depth = config.read().unwrap().fft_depth;
         let scroll = config.read().unwrap().scroll;
         let fft = planner.plan_fft_forward(fft_depth);
-        let rx = Rx::new(plot);
+        let rx = Rx::new();
 
         Self {
             receiver,
@@ -47,6 +48,7 @@ impl WaterfallProcessor {
             image: None,
             scroll,
             rx,
+            // plot,
         }
     }
 
@@ -83,7 +85,7 @@ impl WaterfallProcessor {
                 continue;
             }
 
-            self.rx.run(samples.clone(), config.clone());
+            self.rx.run(samples.clone(), config);
             self.run_fft(samples);
         }
     }

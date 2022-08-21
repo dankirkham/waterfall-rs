@@ -8,7 +8,7 @@ use cpal::traits::{DeviceTrait, HostTrait, StreamTrait};
 use crate::configuration::Configuration;
 use crate::filter::Filter;
 use crate::filter::HighPassFilter;
-use crate::synth::{Ft8, Samples};
+// use crate::synth::Ft8;
 use crate::units::Frequency;
 
 pub type RecorderData = f32;
@@ -57,7 +57,7 @@ impl Recorder {
         let sender = self.sender.clone();
         let mut filter = HighPassFilter::from_frequency(Frequency::Hertz(300.0), self.sample_rate);
 
-        let mut ft8 = Ft8::new(self.sample_rate, Frequency::Hertz(100.0));
+        // let mut ft8 = Ft8::new(self.sample_rate, Frequency::Hertz(100.0));
 
         let stream = match config.sample_format() {
             cpal::SampleFormat::F32 => device.build_input_stream(

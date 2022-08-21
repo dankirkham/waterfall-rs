@@ -1,5 +1,4 @@
-use egui::plot::{Line, Plot, Value, Values};
-use egui::*;
+use egui::plot::{Line, Plot, Values};
 
 use crate::recorder::RecorderData;
 
@@ -7,7 +6,7 @@ pub struct Scope<'a> {
     plot_data: &'a Vec<RecorderData>,
 }
 
-fn trigger_position(data: &Vec<RecorderData>, threshold: f32) -> Option<usize> {
+fn trigger_position(data: &[RecorderData], threshold: f32) -> Option<usize> {
     let below = data.iter().position(|d| d < &threshold)?;
     data[below..].iter().position(|d| d > &threshold)
 }
@@ -18,9 +17,9 @@ impl<'a> Scope<'a> {
     }
 
     pub fn ui(&mut self, ui: &mut egui::Ui) {
-        let plot_data = match trigger_position(&self.plot_data, 0.0) {
+        let plot_data = match trigger_position(self.plot_data, 0.0) {
             Some(start_pos) => &self.plot_data[start_pos..],
-            None => &self.plot_data,
+            None => self.plot_data,
         };
 
         let line = Line::new(Values::from_ys_f32(plot_data));

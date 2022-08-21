@@ -1,5 +1,3 @@
-use rand::Rng;
-
 use crate::synth::ft8::Symbol;
 use crate::synth::Samples;
 use crate::units::Frequency;
@@ -14,6 +12,7 @@ pub struct Ft8 {
 }
 
 impl Ft8 {
+    #[allow(dead_code)]
     pub fn new(sample_rate: Frequency, carrier: Frequency) -> Self {
         let signaling_interval = 0.160;
         let symbol = 0;
@@ -42,10 +41,7 @@ impl Samples for Ft8 {
                 self.symbol = 0;
             }
 
-            println!("--> Symbol:  {}", self.symbol);
-
-            let mut rng = rand::thread_rng();
-            // self.symbol = rng.gen_range(0..8);
+            // println!("--> Symbol:  {}", self.symbol);
 
             self.synth = Symbol::with_amplitude(
                 self.sample_rate,

@@ -10,7 +10,6 @@ pub struct HighPassFilter {
 }
 
 impl HighPassFilter {
-    #[allow(dead_code)]
     pub fn new(alpha: f32) -> Self {
         Self {
             prev_x: None,
@@ -22,11 +21,7 @@ impl HighPassFilter {
     pub fn from_frequency(cutoff: Frequency, sample_rate: Frequency) -> Self {
         let sample_period = 1.0 / sample_rate.value();
         let alpha = 1.0 / (2.0 * PI * sample_period * cutoff.value() + 1.0);
-        Self {
-            prev_x: None,
-            prev_y: 0.0,
-            alpha,
-        }
+        HighPassFilter::new(alpha)
     }
 }
 

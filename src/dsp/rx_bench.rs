@@ -1,26 +1,26 @@
 extern crate test;
 
-use rand::Rng;
-
-use crate::configuration::Configuration;
-use crate::recorder::RecorderData;
-use crate::units::Frequency;
-
-use super::rx::Rx;
-
 #[cfg(test)]
 mod tests {
     use super::*;
-    use test::{black_box, Bencher};
+
+    use test::Bencher;
+
+    use rand::Rng;
+
+    use crate::configuration::Configuration;
+    use crate::dsp::rx::Rx;
+    use crate::recorder::RecorderData;
 
     #[bench]
     fn bench_rx(b: &mut Bencher) {
         let mut rx = Rx::new();
-        let mut config = Configuration::default();
+        let config = Configuration::default();
 
         let mut rng = rand::thread_rng();
-        let mut signal: Vec<RecorderData> = Vec::with_capacity(config.fft_depth);
-        for _ in 0..512 {
+        let buffer_len = (config.audio_sample_rate as f32 / 6.25) as usize;
+        let mut signal: Vec<RecorderData> = Vec::with_capacity(buffer_len);
+        for _ in 0..(buffer_len + 1) {
             signal.push(rng.gen_range(0.0..2.0_f32.powf(16.0)));
         }
 
