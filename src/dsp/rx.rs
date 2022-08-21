@@ -1,11 +1,14 @@
+use std::cmp::Ordering;
+
+use rayon::prelude::*;
+
 use crate::configuration::Configuration;
+use crate::dsp::correlation::correlate;
 use crate::filter::{BandPassFilter, Filter, LowPassFilter};
 use crate::recorder::RecorderData;
 use crate::synth::Symbol;
 use crate::synth::{Samples, Sine};
 use crate::units::Frequency;
-
-use super::correlation::correlate;
 
 pub struct Rx {
     symbols: Vec<Vec<RecorderData>>,
@@ -80,28 +83,19 @@ impl Rx {
             let signal: Vec<RecorderData> = low_passed.collect();
 
             // Correlate
-            let mut max_symbol = 0;
-            let mut total_max = 0.0;
-            for symbol in 0..8 {
-                let syn = &self.symbols[symbol];
+            let symbol = self.symbols
+                .par_iter()
+                .map(|syn| {
+                    let c = correlate(&signal, syn, true);
 
-                let c = correlate(&signal, syn, true);
+                    c.into_iter().fold(-f32::INFINITY, |a, b| a.max(b))
+                })
+                .enumerate()
+                .max_by(|(_, a), (_, b)| a.partial_cmp(b).unwrap_or(Ordering::Equal))
+                .map(|(index, _)| index)
+                .unwrap();
 
-                let max = c
-                    .into_iter()
-                    //.map(|v| v.abs())
-                    //.sum();
-                    .fold(-f32::INFINITY, |a, b| a.max(b));
-                // println!("{}: {}", symbol, max);
-
-                if max > total_max {
-                    total_max = max;
-                    max_symbol = symbol;
-                }
-                // println!("{}: {}", symbol, max);
-            }
-
-            println!("Decoded: {} ({})", max_symbol, total_max);
+            println!("Decoded: {}", symbol);
         }
     }
 }
