@@ -1,17 +1,4 @@
-#![feature(test)]
-#![feature(portable_simd)]
-
-mod app;
-mod configuration;
-mod dsp;
-mod filter;
-mod plot_data;
-mod recorder;
-mod synth;
-mod ui;
-mod units;
-
-use app::App;
+use waterfall_rs::app::App;
 
 fn main() {
     // Log to stdout (if you run with `RUST_LOG=debug`).

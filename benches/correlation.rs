@@ -1,3 +1,4 @@
+#![feature(test)]
 extern crate test;
 
 #[cfg(test)]
@@ -8,8 +9,8 @@ mod tests {
 
     use rand::Rng;
 
-    use crate::dsp::correlation::correlate;
-    use crate::recorder::RecorderData;
+    use waterfall_rs::dsp::correlation::correlate;
+    use waterfall_rs::recorder::RecorderData;
 
     #[bench]
     fn bench_correlate(b: &mut Bencher) {

@@ -1,3 +1,4 @@
+#![feature(test)]
 extern crate test;
 
 #[cfg(test)]
@@ -8,9 +9,9 @@ mod tests {
 
     use rand::Rng;
 
-    use crate::configuration::Configuration;
-    use crate::dsp::rx::Rx;
-    use crate::recorder::RecorderData;
+    use waterfall_rs::configuration::Configuration;
+    use waterfall_rs::dsp::rx::Rx;
+    use waterfall_rs::recorder::RecorderData;
 
     #[bench]
     fn bench_rx(b: &mut Bencher) {

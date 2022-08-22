@@ -1,7 +1,5 @@
-mod correlation;
-mod correlation_bench;
-mod rx;
-mod rx_bench;
+pub mod correlation;
+pub mod rx;
 mod turbo;
 mod waterfall_processor;
 
