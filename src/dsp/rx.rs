@@ -3,7 +3,7 @@ use std::cmp::Ordering;
 use rayon::prelude::*;
 
 use crate::configuration::Configuration;
-use crate::dsp::correlation::correlate;
+use crate::dsp::correlator::Correlator;
 use crate::filter::{BandPassFilter, Filter, LowPassFilter};
 use crate::recorder::RecorderData;
 use crate::synth::Symbol;
@@ -14,6 +14,7 @@ pub struct Rx {
     symbols: Vec<Vec<RecorderData>>,
     buffer_len: usize,
     data: Vec<RecorderData>,
+    correlator: Correlator,
 }
 
 impl Rx {
@@ -25,6 +26,7 @@ impl Rx {
 
         let buffer_len = (sample_rate.value() / 6.25) as usize;
         let data: Vec<RecorderData> = Vec::with_capacity(buffer_len);
+        let correlator = Correlator::new(buffer_len);
 
         for symbol in 0..8 {
             let mut gen = Symbol::with_amplitude(sample_rate, carrier, symbol as f32, 1.0);
@@ -38,6 +40,7 @@ impl Rx {
             symbols,
             buffer_len,
             data,
+            correlator,
         }
     }
 
@@ -83,10 +86,11 @@ impl Rx {
             let signal: Vec<RecorderData> = low_passed.collect();
 
             // Correlate
-            let symbol = self.symbols
+            let symbol = self
+                .symbols
                 .par_iter()
                 .map(|syn| {
-                    let c = correlate(&signal, syn, true);
+                    let c = self.correlator.correlate(&signal, syn, true);
 
                     c.into_iter().fold(-f32::INFINITY, |a, b| a.max(b))
                 })

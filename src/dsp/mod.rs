@@ -1,4 +1,4 @@
-pub mod correlation;
+pub mod correlator;
 pub mod rx;
 mod turbo;
 mod waterfall_processor;

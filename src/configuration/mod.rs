@@ -1,4 +1,7 @@
+mod tuner_settings;
+
 use crate::units::Frequency;
+pub use tuner_settings::TunerSettings;
 
 #[derive(Copy, Clone)]
 pub struct Configuration {
@@ -77,32 +80,5 @@ impl Configuration {
         let bin = (f.value() / self.bin_hz()) as i32;
         let result = (bin - self.scroll_start() as i32) as f32 / self.zoomed_length() as f32;
         result.clamp(0.0, 1.0)
-    }
-}
-
-#[derive(Copy, Clone)]
-pub struct TunerSettings {
-    pub lower: Frequency,
-    pub upper: Frequency,
-    pub carrier: Frequency,
-}
-
-impl Default for TunerSettings {
-    fn default() -> Self {
-        TunerSettings {
-            lower: Frequency::Hertz(0.0),
-            upper: Frequency::Hertz(160.0),
-            carrier: Frequency::Hertz(2500.0),
-        }
-    }
-}
-
-impl TunerSettings {
-    pub fn lower_absolute(&self) -> Frequency {
-        self.carrier + self.lower
-    }
-
-    pub fn upper_absolute(&self) -> Frequency {
-        self.carrier + self.upper
     }
 }
