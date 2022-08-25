@@ -3,7 +3,7 @@ use std::cmp::Ordering;
 use rayon::prelude::*;
 
 use crate::configuration::Configuration;
-use crate::dsp::correlator::Correlator;
+use crate::dsp::correlator::{Correlator, OperandData};
 use crate::filter::{BandPassFilter, Filter, LowPassFilter};
 use crate::recorder::RecorderData;
 use crate::synth::Symbol;
@@ -11,7 +11,7 @@ use crate::synth::{Samples, Sine};
 use crate::units::Frequency;
 
 pub struct Rx {
-    symbols: Vec<Vec<RecorderData>>,
+    symbols: Vec<OperandData>,
     buffer_len: usize,
     data: Vec<RecorderData>,
     correlator: Correlator,
@@ -19,7 +19,7 @@ pub struct Rx {
 
 impl Rx {
     pub fn new() -> Self {
-        let mut symbols: Vec<Vec<RecorderData>> = Vec::with_capacity(8);
+        let mut symbols: Vec<OperandData> = Vec::with_capacity(8);
 
         let sample_rate = Frequency::Hertz(44100.0);
         let carrier = Frequency::Hertz(100.0);
@@ -34,7 +34,8 @@ impl Rx {
             let len: usize =
                 (sample_rate.value() / (carrier.value() + (symbol as f32) * 6.25)) as usize;
             let syn: Vec<RecorderData> = (0..len).into_iter().map(|_| gen.next()).collect();
-            symbols.push(syn);
+
+            symbols.push(correlator.prepare_rhs(&syn));
         }
         Self {
             symbols,
@@ -86,11 +87,12 @@ impl Rx {
             let signal: Vec<RecorderData> = low_passed.collect();
 
             // Correlate
+            let lhs = self.correlator.prepare_lhs(&signal);
             let symbol = self
                 .symbols
                 .par_iter()
                 .map(|syn| {
-                    let c = self.correlator.correlate(&signal, syn, true);
+                    let c = self.correlator.correlate_with_prepared(&lhs, syn, true);
 
                     c.into_iter().fold(-f32::INFINITY, |a, b| a.max(b))
                 })

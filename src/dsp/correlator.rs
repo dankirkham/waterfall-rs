@@ -1,6 +1,5 @@
 use std::sync::Arc;
 
-use float_cmp::ApproxEq;
 use rustfft::{num_complex::Complex, Fft, FftPlanner};
 
 use crate::recorder::RecorderData;
@@ -13,6 +12,11 @@ pub struct Correlator {
     ifft: Arc<dyn Fft<FftNum>>,
 }
 
+pub struct OperandData {
+    fft: Vec<Complex<FftNum>>,
+    sum: FftNum,
+}
+
 impl Correlator {
     pub fn new(input_size: usize) -> Self {
         let size = (2 * input_size) - 1;
@@ -22,48 +26,84 @@ impl Correlator {
         Self { fft, ifft, size }
     }
 
+    pub fn prepare_lhs(&self, input: &[RecorderData]) -> OperandData {
+        let sum: f32 = input.iter().map(|v| v.abs().powf(2.0)).sum();
+
+        let mut complex: Vec<Complex<FftNum>> =
+            input.iter().map(|&re| Complex { re, im: 0.0 }).collect();
+        complex.resize(self.size, Complex { re: 0.0, im: 0.0 });
+
+        self.fft.process(&mut complex);
+
+        OperandData { sum, fft: complex }
+    }
+
+    pub fn prepare_rhs(&self, input: &[RecorderData]) -> OperandData {
+        let data = self.prepare_lhs(input);
+
+        let fft = data
+            .fft
+            .into_iter()
+            .map(|Complex { re, im }| Complex { re, im: -im })
+            .collect();
+
+        OperandData { sum: data.sum, fft }
+    }
+
     pub fn correlate(
         &self,
         a: &[RecorderData],
         b: &[RecorderData],
         normalize: bool,
     ) -> Vec<RecorderData> {
-        let mut a_complex: Vec<Complex<FftNum>> =
-            a.iter().map(|&re| Complex { re, im: 0.0 }).collect();
-        a_complex.resize(self.size, Complex { re: 0.0, im: 0.0 });
+        let lhs_data = self.prepare_lhs(a);
+        let rhs_data = self.prepare_rhs(b);
 
-        let mut b_complex: Vec<Complex<FftNum>> =
-            b.iter().map(|&re| Complex { re, im: 0.0 }).collect();
-        b_complex.resize(self.size, Complex { re: 0.0, im: 0.0 });
+        self.correlate_with_prepared(&lhs_data, &rhs_data, normalize)
+    }
 
-        self.fft.process(&mut a_complex);
-        self.fft.process(&mut b_complex);
-
-        let b_conj = b_complex
-            .into_iter()
-            .map(|Complex { re, im }| Complex { re, im: -im });
+    pub fn correlate_with_prepared(
+        &self,
+        a: &OperandData,
+        b: &OperandData,
+        normalize: bool,
+    ) -> Vec<RecorderData> {
+        let OperandData {
+            sum: a_sum,
+            fft: a_complex,
+        } = a;
+        let OperandData {
+            sum: b_sum,
+            fft: b_conj,
+        } = b;
 
         let mut r_complex: Vec<Complex<FftNum>> =
-            b_conj.zip(a_complex).map(|(a, b)| a * b).collect();
+            b_conj.iter().zip(a_complex).map(|(a, b)| a * b).collect();
 
         self.ifft.process(&mut r_complex);
 
-        let r: Vec<RecorderData> = r_complex
+        let r_iter = r_complex
             .into_iter()
             .map(|c| c.re) // Use only real part
-            .map(|v| v / (self.size as f32)) // Normalize
-            .collect();
+            .map(|v| v / (self.size as f32)); // Normalize
+
+        let r: Vec<RecorderData> = if normalize {
+            let norm = (a_sum * b_sum).sqrt();
+
+            r_iter.map(|v: f32| v / norm).collect()
+        } else {
+            r_iter.collect()
+        };
 
         let mid = self.size / 2 + 1;
-        let result = [&r[mid..], &r[..mid]].concat();
-
-        result
+        [&r[mid..], &r[..mid]].concat()
     }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use float_cmp::ApproxEq;
 
     // #[test]
     // fn test_correlate_empty() {
