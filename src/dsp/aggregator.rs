@@ -30,3 +30,42 @@ impl Aggregator {
         Some(subset)
     }
 }
+
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_aggregate() {
+        let mut agg = Aggregator::new(2);
+
+        let a = vec![1.0, 2.0];
+        let b = vec![3.0, 4.0];
+        let c = vec![5.0, 6.0];
+
+        agg.aggregate(a);
+        agg.aggregate(b);
+
+        let o1 = agg.get_slice();
+        assert!(o1.is_some());
+        let r1 = o1.unwrap();
+        assert_eq!(r1[0], 1.0);
+        assert_eq!(r1[1], 2.0);
+
+        agg.aggregate(c);
+
+        let o2 = agg.get_slice();
+        assert!(o2.is_some());
+        let r2 = o2.unwrap();
+        assert_eq!(r2[0], 3.0);
+        assert_eq!(r2[1], 4.0);
+
+        let o3 = agg.get_slice();
+        assert!(o3.is_some());
+        let r3 = o3.unwrap();
+        assert_eq!(r3[0], 5.0);
+        assert_eq!(r3[1], 6.0);
+
+        let o4 = agg.get_slice();
+        assert!(o4.is_none());
+    }
+}

@@ -6,3 +6,4 @@ mod processor;
 pub mod waterfall_processor;
 
 pub use processor::Processor;
+pub use aggregator::Aggregator;

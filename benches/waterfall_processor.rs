@@ -19,7 +19,7 @@ mod tests {
     fn bench_waterfall_processor(b: &mut Bencher) {
         let config = Configuration::default();
         let safe_config = Arc::new(RwLock::new(config));
-        let (image_tx, image_rx) = mpsc::channel::<ColorImage>();
+        let (image_tx, _image_rx) = mpsc::channel::<ColorImage>();
         let mut wp = WaterfallProcessor::new(safe_config, image_tx);
 
         let mut rng = rand::thread_rng();
