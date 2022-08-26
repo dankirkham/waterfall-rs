@@ -5,7 +5,7 @@ use egui::*;
 use egui_extras::image::RetainedImage;
 
 use crate::configuration::Configuration;
-use crate::dsp::WaterfallProcessor;
+use crate::dsp::Processor;
 use crate::recorder::{Recorder, RecorderData};
 use crate::ui::{Scope, WaterfallPlot};
 
@@ -37,7 +37,7 @@ impl App {
 
         let p_config = safe_config.clone();
         thread::spawn(move || {
-            let mut processor = WaterfallProcessor::new(sample_rx, image_tx, plot_tx, p_config);
+            let mut processor = Processor::new(sample_rx, image_tx, plot_tx, p_config);
             processor.start();
         });
 

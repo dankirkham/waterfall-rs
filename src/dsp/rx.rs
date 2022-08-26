@@ -3,6 +3,7 @@ use std::cmp::Ordering;
 use rayon::prelude::*;
 
 use crate::configuration::Configuration;
+use crate::dsp::aggregator::Aggregator;
 use crate::dsp::correlator::{Correlator, OperandData};
 use crate::filter::{BandPassFilter, Filter, LowPassFilter};
 use crate::recorder::RecorderData;
@@ -12,9 +13,8 @@ use crate::units::Frequency;
 
 pub struct Rx {
     symbols: Vec<OperandData>,
-    buffer_len: usize,
-    data: Vec<RecorderData>,
     correlator: Correlator,
+    aggregator: Aggregator,
 }
 
 impl Rx {
@@ -25,8 +25,8 @@ impl Rx {
         let carrier = Frequency::Hertz(100.0);
 
         let buffer_len = (sample_rate.value() / 6.25) as usize;
-        let data: Vec<RecorderData> = Vec::with_capacity(buffer_len);
         let correlator = Correlator::new(buffer_len);
+        let aggregator = Aggregator::new(buffer_len);
 
         for symbol in 0..8 {
             let mut gen = Symbol::with_amplitude(sample_rate, carrier, symbol as f32, 1.0);
@@ -39,28 +39,15 @@ impl Rx {
         }
         Self {
             symbols,
-            buffer_len,
-            data,
             correlator,
+            aggregator,
         }
     }
 
     pub fn run(&mut self, new_samples: Vec<RecorderData>, config: Configuration) {
-        if self.data.len() < self.buffer_len {
-            self.data.extend(new_samples);
-            return;
-        }
+        self.aggregator.aggregate(new_samples);
 
-        while self.data.len() > self.buffer_len {
-            let mut subset: Vec<RecorderData>;
-            let samples = {
-                subset = Vec::with_capacity(self.buffer_len);
-                subset.extend_from_slice(&self.data[0..self.buffer_len]);
-                self.data.rotate_left(self.buffer_len);
-                self.data.resize(self.data.len() - self.buffer_len, 0.0);
-                subset
-            };
-
+        while let Some(samples) = self.aggregator.get_slice() {
             let sample_rate = Frequency::Hertz(config.audio_sample_rate as f32);
 
             // Bandpass
@@ -69,9 +56,9 @@ impl Rx {
                 config.tuner.upper_absolute(), // High
                 sample_rate,                   // SampleRate
             );
-            let bandpassed = samples.iter().map(|sample| bpf.next(*sample));
+            let bandpassed = samples.into_iter().map(|sample| bpf.next(sample));
 
-            // LCO Mix
+            // LO Mix
             let if_carrier = config.tuner.carrier - Frequency::Hertz(100.001);
             let mut carrier = Sine::new(sample_rate, if_carrier);
             let mixed = bandpassed.map(|sample| sample * carrier.next());
