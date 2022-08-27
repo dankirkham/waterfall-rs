@@ -1,9 +1,9 @@
 pub mod app;
 pub mod configuration;
 pub mod dsp;
+pub mod input;
 pub mod filter;
-pub mod plot_data;
-pub mod recorder;
 pub mod synth;
+pub mod types;
 pub mod ui;
 pub mod units;

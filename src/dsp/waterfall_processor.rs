@@ -9,8 +9,7 @@ use rustfft::num_complex::Complex;
 
 use crate::configuration::Configuration;
 use crate::dsp::aggregator::Aggregator;
-use crate::plot_data::PLOT_DEPTH;
-use crate::recorder::RecorderData;
+use crate::types::{PLOT_DEPTH, SampleType};
 
 use super::turbo::get_color;
 
@@ -23,7 +22,7 @@ pub struct WaterfallProcessor {
     scroll: f32,
     aggregator: Aggregator,
     sender: Sender<ColorImage>,
-    // plot: Sender<Vec<RecorderData>>,
+    // plot: Sender<Vec<SampleType>>,
 }
 
 impl WaterfallProcessor {
@@ -50,7 +49,7 @@ impl WaterfallProcessor {
         }
     }
 
-    pub fn run(&mut self, new_samples: Vec<RecorderData>) {
+    pub fn run(&mut self, new_samples: Vec<SampleType>) {
         let config = *self.config.read().unwrap();
         self.aggregator.aggregate(new_samples);
 

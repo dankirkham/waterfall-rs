@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use rustfft::{num_complex::Complex, Fft, FftPlanner};
 
-use crate::recorder::RecorderData;
+use crate::types::SampleType;
 
 type FftNum = f32;
 
@@ -26,7 +26,7 @@ impl Correlator {
         Self { fft, ifft, size }
     }
 
-    pub fn prepare_lhs(&self, input: &[RecorderData]) -> OperandData {
+    pub fn prepare_lhs(&self, input: &[SampleType]) -> OperandData {
         let sum: f32 = input.iter().map(|v| v.abs().powf(2.0)).sum();
 
         let mut complex: Vec<Complex<FftNum>> =
@@ -38,7 +38,7 @@ impl Correlator {
         OperandData { sum, fft: complex }
     }
 
-    pub fn prepare_rhs(&self, input: &[RecorderData]) -> OperandData {
+    pub fn prepare_rhs(&self, input: &[SampleType]) -> OperandData {
         let data = self.prepare_lhs(input);
 
         let fft = data
@@ -52,10 +52,10 @@ impl Correlator {
 
     pub fn correlate(
         &self,
-        a: &[RecorderData],
-        b: &[RecorderData],
+        a: &[SampleType],
+        b: &[SampleType],
         normalize: bool,
-    ) -> Vec<RecorderData> {
+    ) -> Vec<SampleType> {
         let lhs_data = self.prepare_lhs(a);
         let rhs_data = self.prepare_rhs(b);
 
@@ -67,7 +67,7 @@ impl Correlator {
         a: &OperandData,
         b: &OperandData,
         normalize: bool,
-    ) -> Vec<RecorderData> {
+    ) -> Vec<SampleType> {
         let OperandData {
             sum: a_sum,
             fft: a_complex,
@@ -87,7 +87,7 @@ impl Correlator {
             .map(|c| c.re) // Use only real part
             .map(|v| v / (self.size as f32)); // Normalize
 
-        let r: Vec<RecorderData> = if normalize {
+        let r: Vec<SampleType> = if normalize {
             let norm = (a_sum * b_sum).sqrt();
 
             r_iter.map(|v: f32| v / norm).collect()
@@ -104,7 +104,7 @@ impl Correlator {
         a: &OperandData,
         b: &OperandData,
         normalize: bool,
-    ) -> RecorderData {
+    ) -> SampleType {
         let OperandData {
             sum: a_sum,
             fft: a_complex,

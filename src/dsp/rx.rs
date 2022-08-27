@@ -6,9 +6,9 @@ use crate::configuration::Configuration;
 use crate::dsp::aggregator::Aggregator;
 use crate::dsp::correlator::{Correlator, OperandData};
 use crate::filter::{BandPassFilter, Filter, LowPassFilter};
-use crate::recorder::RecorderData;
 use crate::synth::Symbol;
 use crate::synth::{Samples, Sine};
+use crate::types::SampleType;
 use crate::units::Frequency;
 
 pub struct Rx {
@@ -33,7 +33,7 @@ impl Rx {
 
             let len: usize =
                 (sample_rate.value() / (carrier.value() + (symbol as f32) * 6.25)) as usize;
-            let syn: Vec<RecorderData> = (0..len).into_iter().map(|_| gen.next()).collect();
+            let syn: Vec<SampleType> = (0..len).into_iter().map(|_| gen.next()).collect();
 
             symbols.push(correlator.prepare_rhs(&syn));
         }
@@ -44,7 +44,7 @@ impl Rx {
         }
     }
 
-    pub fn run(&mut self, new_samples: Vec<RecorderData>, config: Configuration) {
+    pub fn run(&mut self, new_samples: Vec<SampleType>, config: Configuration) {
         self.aggregator.aggregate(new_samples);
 
         while let Some(samples) = self.aggregator.get_slice() {
@@ -71,7 +71,7 @@ impl Rx {
             let low_passed = mixed.map(|sample| lpf.next(sample));
 
             // Collect into signal
-            let signal: Vec<RecorderData> = low_passed.collect();
+            let signal: Vec<SampleType> = low_passed.collect();
 
             // Correlate
             let lhs = self.correlator.prepare_lhs(&signal);

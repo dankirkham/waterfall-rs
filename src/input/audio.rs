@@ -9,20 +9,20 @@ use cpal::traits::{DeviceTrait, HostTrait, StreamTrait};
 use crate::configuration::Configuration;
 use crate::filter::Filter;
 use crate::filter::HighPassFilter;
-// use crate::synth::Ft8;
+use crate::types::SampleType;
 use crate::units::Frequency;
 
-pub type RecorderData = f32;
+// use crate::synth::Ft8;
 
-pub struct Recorder {
-    sender: Sender<Vec<RecorderData>>,
+pub struct Audio {
+    sender: Sender<Vec<SampleType>>,
     // config: Arc<RwLock<Configuration>>,
     sample_rate: Frequency,
     stream: Stream,
 }
 
-impl Recorder {
-    pub fn new(sender: Sender<Vec<RecorderData>>, config: Arc<RwLock<Configuration>>) -> Self {
+impl Audio {
+    pub fn new(sender: Sender<Vec<SampleType>>, config: Arc<RwLock<Configuration>>) -> Self {
         let sample_rate = Frequency::Hertz(config.read().unwrap().audio_sample_rate as f32);
 
         let host = cpal::default_host();

@@ -4,13 +4,13 @@ use std::sync::{Arc, RwLock};
 use egui::ColorImage;
 
 use crate::configuration::Configuration;
-use crate::recorder::RecorderData;
+use crate::types::SampleType;
 
 use super::rx::Rx;
 use super::waterfall_processor::WaterfallProcessor;
 
 pub struct Processor {
-    receiver: Receiver<Vec<RecorderData>>,
+    receiver: Receiver<Vec<SampleType>>,
     config: Arc<RwLock<Configuration>>,
     rx: Rx,
     wp: WaterfallProcessor,
@@ -18,9 +18,9 @@ pub struct Processor {
 
 impl Processor {
     pub fn new(
-        receiver: Receiver<Vec<RecorderData>>,
+        receiver: Receiver<Vec<SampleType>>,
         sender: Sender<ColorImage>,
-        _plot: Sender<Vec<RecorderData>>,
+        _plot: Sender<Vec<SampleType>>,
         config: Arc<RwLock<Configuration>>,
     ) -> Self {
         let rx = Rx::new();

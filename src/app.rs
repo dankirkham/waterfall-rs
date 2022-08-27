@@ -5,7 +5,8 @@ use egui_extras::image::RetainedImage;
 
 use crate::configuration::Configuration;
 use crate::dsp::Processor;
-use crate::recorder::{Recorder, RecorderData};
+use crate::input::Source;
+use crate::types::SampleType;
 use crate::ui::{Scope, WaterfallPlot};
 
 pub struct App {
@@ -15,24 +16,24 @@ pub struct App {
     safe_config: Arc<RwLock<Configuration>>,
     config: Configuration,
 
-    plot_rx: mpsc::Receiver<Vec<RecorderData>>,
-    plot_data: Vec<RecorderData>,
+    plot_rx: mpsc::Receiver<Vec<SampleType>>,
+    plot_data: Vec<SampleType>,
 
     processor: Processor,
-    recorder: Recorder,
+    source: Source,
 }
 
 impl App {
     pub fn new(_cc: &eframe::CreationContext<'_>) -> Self {
         let (image_tx, image_rx) = mpsc::channel::<ColorImage>();
-        let (sample_tx, sample_rx) = mpsc::channel::<Vec<RecorderData>>();
-        let (plot_tx, plot_rx) = mpsc::channel::<Vec<RecorderData>>();
+        let (sample_tx, sample_rx) = mpsc::channel::<Vec<SampleType>>();
+        let (plot_tx, plot_rx) = mpsc::channel::<Vec<SampleType>>();
 
         let config = Configuration::default();
         let safe_config = Arc::new(RwLock::new(config));
 
         let r_config = safe_config.clone();
-        let recorder = Recorder::new(sample_tx, r_config);
+        let source = Source::new(sample_tx, r_config);
 
         let p_config = safe_config.clone();
         let processor = Processor::new(sample_rx, image_tx, plot_tx, p_config);
@@ -47,7 +48,7 @@ impl App {
             plot_data: Vec::new(),
 
             processor,
-            recorder,
+            source,
         }
     }
 

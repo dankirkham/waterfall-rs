@@ -1,10 +1,10 @@
 use std::collections::VecDeque;
 
-use crate::recorder::RecorderData;
+use crate::types::SampleType;
 
 pub struct Aggregator {
     buffer_len: usize,
-    data: VecDeque<RecorderData>,
+    data: VecDeque<SampleType>,
 }
 
 impl Aggregator {
@@ -15,11 +15,11 @@ impl Aggregator {
         }
     }
 
-    pub fn aggregate(&mut self, new_data: Vec<RecorderData>) {
+    pub fn aggregate(&mut self, new_data: Vec<SampleType>) {
         self.data.extend(new_data);
     }
 
-    pub fn get_slice(&mut self) -> Option<Vec<RecorderData>> {
+    pub fn get_slice(&mut self) -> Option<Vec<SampleType>> {
         if self.data.len() < self.buffer_len {
             return None;
         }
@@ -28,7 +28,7 @@ impl Aggregator {
         // self.data.rotate_left(self.buffer_len);
         // self.data.resize(self.data.len() - self.buffer_len, 0.0);
 
-        let subset: Vec<RecorderData> = self.data.drain(..self.buffer_len).collect();
+        let subset: Vec<SampleType> = self.data.drain(..self.buffer_len).collect();
 
         Some(subset)
     }

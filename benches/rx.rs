@@ -11,7 +11,7 @@ mod tests {
 
     use waterfall_rs::configuration::Configuration;
     use waterfall_rs::dsp::rx::Rx;
-    use waterfall_rs::recorder::RecorderData;
+    use waterfall_rs::types::WaterfallProcessor;
 
     #[bench]
     fn bench_rx(b: &mut Bencher) {
@@ -20,7 +20,7 @@ mod tests {
 
         let mut rng = rand::thread_rng();
         let buffer_len = (config.audio_sample_rate as f32 / 6.25) as usize;
-        let mut signal: Vec<RecorderData> = Vec::with_capacity(buffer_len);
+        let mut signal: Vec<WaterfallProcessor> = Vec::with_capacity(buffer_len);
         for _ in 0..(buffer_len + 1) {
             signal.push(rng.gen_range(0.0..2.0_f32.powf(16.0)));
         }

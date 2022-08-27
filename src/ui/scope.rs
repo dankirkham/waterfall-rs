@@ -1,18 +1,18 @@
 use egui::plot::{Line, Plot, Values};
 
-use crate::recorder::RecorderData;
+use crate::types::SampleType;
 
 pub struct Scope<'a> {
-    plot_data: &'a Vec<RecorderData>,
+    plot_data: &'a Vec<SampleType>,
 }
 
-fn trigger_position(data: &[RecorderData], threshold: f32) -> Option<usize> {
+fn trigger_position(data: &[SampleType], threshold: f32) -> Option<usize> {
     let below = data.iter().position(|d| d < &threshold)?;
     data[below..].iter().position(|d| d > &threshold)
 }
 
 impl<'a> Scope<'a> {
-    pub fn new(plot_data: &'a Vec<RecorderData>) -> Self {
+    pub fn new(plot_data: &'a Vec<SampleType>) -> Self {
         Self { plot_data }
     }
 

@@ -10,19 +10,19 @@ mod tests {
     use rand::Rng;
 
     use waterfall_rs::dsp::correlator::Correlator;
-    use waterfall_rs::recorder::RecorderData;
+    use waterfall_rs::types::WaterfallProcessor;
 
     #[bench]
     fn bench_correlate(b: &mut Bencher) {
         let mut rng = rand::thread_rng();
 
         let size = 1024;
-        let mut a1: Vec<RecorderData> = Vec::with_capacity(size);
+        let mut a1: Vec<WaterfallProcessor> = Vec::with_capacity(size);
         for _ in 0..size {
             a1.push(rng.gen_range(0.0..2.0_f32.powf(16.0)));
         }
 
-        let mut a2: Vec<RecorderData> = Vec::with_capacity(size);
+        let mut a2: Vec<WaterfallProcessor> = Vec::with_capacity(size);
         for _ in 0..size {
             a2.push(rng.gen_range(0.0..2.0_f32.powf(16.0)));
         }
