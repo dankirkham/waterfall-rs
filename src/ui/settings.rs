@@ -1,6 +1,7 @@
 use egui::*;
 
 use crate::configuration::Configuration;
+use crate::configuration::DecoderType;
 use crate::input::InputSource;
 
 pub struct Settings<'a> {
@@ -80,5 +81,10 @@ impl<'a> Settings<'a> {
             ui.label("Bandpass Upper");
             ui.end_row();
         });
+        egui::ComboBox::from_label("Decoder")
+            .selected_text(format!("{:?}", self.config.tuner.decoder))
+            .show_ui(ui, |ui| {
+                ui.selectable_value(&mut self.config.tuner.decoder, DecoderType::Ft8, "FT8");
+            });
     }
 }

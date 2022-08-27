@@ -7,7 +7,7 @@ use crate::configuration::Configuration;
 use crate::dsp::Processor;
 use crate::input::{Audio, InputSource, Source, Synth};
 use crate::types::SampleType;
-use crate::ui::{Scope, Settings, WaterfallPlot};
+use crate::ui::{Scope, Settings, Toolbar, WaterfallPlot, Windows};
 
 pub struct App {
     image_rx: mpsc::Receiver<ColorImage>,
@@ -22,6 +22,8 @@ pub struct App {
 
     source: Box<dyn Source>,
     input_source: InputSource,
+
+    show: Windows,
 }
 
 impl App {
@@ -49,6 +51,8 @@ impl App {
 
             source,
             input_source,
+
+            show: Windows::default(),
         }
     }
 
@@ -90,15 +94,24 @@ impl eframe::App for App {
             self.plot_data = plot_data;
         }
 
-        egui::Window::new("Scope").show(ctx, |ui| {
-            let mut scope = Scope::new(&self.plot_data);
-            scope.ui(ui);
+        egui::TopBottomPanel::top("toolbar").show(ctx, |ui| {
+            let mut toolbar = Toolbar::new(&mut self.show);
+            toolbar.ui(ui);
         });
 
-        egui::Window::new("Settings").show(ctx, |ui| {
-            let mut settings = Settings::new(&mut self.config);
-            settings.ui(ui);
-        });
+        egui::Window::new("Settings")
+            .open(&mut self.show.settings)
+            .show(ctx, |ui| {
+                let mut settings = Settings::new(&mut self.config);
+                settings.ui(ui);
+            });
+
+        egui::Window::new("Scope")
+            .open(&mut self.show.scope)
+            .show(ctx, |ui| {
+                let mut scope = Scope::new(&self.plot_data);
+                scope.ui(ui);
+            });
 
         egui::CentralPanel::default()
             .frame(Frame::none().fill(ctx.style().visuals.faint_bg_color))

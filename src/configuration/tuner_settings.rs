@@ -1,18 +1,25 @@
 use crate::units::Frequency;
 
-#[derive(Copy, Clone)]
+#[derive(Clone, Debug, PartialEq)]
+pub enum DecoderType {
+    Ft8
+}
+
+#[derive(Clone)]
 pub struct TunerSettings {
     pub lower: f32,
     pub upper: f32,
     pub carrier: f32,
+    pub decoder: DecoderType,
 }
 
 impl Default for TunerSettings {
     fn default() -> Self {
         TunerSettings {
             lower: 0.0,
-            upper: 160.0,
+            upper: 50.0,
             carrier: 2500.0,
+            decoder: DecoderType::Ft8,
         }
     }
 }

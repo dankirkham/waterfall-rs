@@ -2,7 +2,7 @@ mod tuner_settings;
 
 use crate::input::InputSource;
 use crate::units::Frequency;
-pub use tuner_settings::TunerSettings;
+pub use tuner_settings::{DecoderType, TunerSettings};
 
 #[derive(Clone)]
 pub struct Configuration {
