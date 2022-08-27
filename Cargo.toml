@@ -7,8 +7,6 @@ edition = "2021"
 debug = true
 # lto = true
 
-[lib]
-
 [dependencies]
 cpal = "0.13.5"
 eframe = { git = "https://github.com/emilk/egui", rev = "898f4804" }
@@ -19,3 +17,9 @@ rand = "0.8.5"
 rayon = "1.5.3"
 realfft = "3.0.0"
 rustfft = "6.0.1"
+
+# web:
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+console_error_panic_hook = "0.1.6"
+tracing-wasm = "0.2"
+getrandom = { version = "0.2.7", features = ["js"] }
