@@ -92,11 +92,47 @@ impl Correlator {
 
             r_iter.map(|v: f32| v / norm).collect()
         } else {
-            r_iter.collect()
+            r_iter.map(|v| v).collect()
         };
 
         let mid = self.size / 2 + 1;
         [&r[mid..], &r[..mid]].concat()
+    }
+
+    pub fn correlate_max_with_prepared(
+        &self,
+        a: &OperandData,
+        b: &OperandData,
+        normalize: bool,
+    ) -> RecorderData {
+        let OperandData {
+            sum: a_sum,
+            fft: a_complex,
+        } = a;
+        let OperandData {
+            sum: b_sum,
+            fft: b_conj,
+        } = b;
+
+        let mut r_complex: Vec<Complex<FftNum>> =
+            b_conj.iter().zip(a_complex).map(|(a, b)| a * b).collect();
+
+        self.ifft.process(&mut r_complex);
+
+        let r_iter = r_complex
+            .into_iter()
+            .map(|c| c.re); // Use only real part
+
+        let mut max = r_iter.fold(-f32::INFINITY, |a, b| a.max(b));
+
+        max /= self.size as f32; // FFT normalize
+
+        if normalize {
+            let norm = (a_sum * b_sum).sqrt(); // Cross-correlation normalize
+            max /= norm
+        }
+
+        max
     }
 }
 

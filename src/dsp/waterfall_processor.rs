@@ -1,3 +1,4 @@
+use std::collections::VecDeque;
 use std::sync::{Arc, RwLock};
 use std::sync::mpsc::Sender;
 
@@ -18,9 +19,10 @@ pub struct WaterfallProcessor {
     config: Arc<RwLock<Configuration>>,
     fft_depth: usize,
     image: Option<ColorImage>,
+    pixels: VecDeque<Color32>,
     scroll: f32,
     aggregator: Aggregator,
-        sender: Sender<ColorImage>,
+    sender: Sender<ColorImage>,
     // plot: Sender<Vec<RecorderData>>,
 }
 
@@ -40,6 +42,7 @@ impl WaterfallProcessor {
             fft_depth,
             config,
             image: None,
+            pixels: VecDeque::new(),
             scroll,
             // plot,
             aggregator,
@@ -56,11 +59,13 @@ impl WaterfallProcessor {
                 if image.size[0] != config.effective_len() {
                     let image =
                         ColorImage::new([config.effective_len(), PLOT_DEPTH], Color32::default());
+                    self.pixels = VecDeque::from(vec![Color32::BLACK; config.effective_len() * PLOT_DEPTH]);
                     self.scroll = config.scroll;
                     self.image = Some(image);
                 }
             } else {
                 let image = ColorImage::new([config.effective_len(), PLOT_DEPTH], Color32::default());
+                self.pixels = VecDeque::from(vec![Color32::BLACK; config.effective_len() * PLOT_DEPTH]);
                 self.scroll = config.scroll;
                 self.image = Some(image);
             }
@@ -77,10 +82,9 @@ impl WaterfallProcessor {
             let m = 255.0 / (config.max_db - config.min_db);
             let scale_func = |x| m * (x - config.min_db);
 
-            let image = self.image.as_mut().unwrap();
-            image.pixels.rotate_left(config.effective_len());
+            self.pixels.drain(..config.effective_len());
 
-            let new_pixels = spectrum
+            spectrum
                 .into_iter()
                 .map(|c| c.norm()) // Magnitude
                 .map(|f| f / (self.fft_depth as f32).sqrt()) // Normalization
@@ -89,12 +93,8 @@ impl WaterfallProcessor {
                 .map(|f| f.clamp(0.0, 255.0))
                 .map(|f| f as usize)
                 .map(get_color)
-                .map(|[r, g, b]| Color32::from_rgb(r, g, b));
-
-            let start_offset = image.pixels.len() - config.effective_len();
-            for (i, pixel) in new_pixels.enumerate() {
-                image.pixels[start_offset + i] = pixel;
-            }
+                .map(|[r, g, b]| Color32::from_rgb(r, g, b))
+                .for_each(|pixel| self.pixels.push_back(pixel));
 
             let zoomed_length = config.zoomed_length();
             let scroll_start = config.scroll_start();
@@ -104,7 +104,7 @@ impl WaterfallProcessor {
             for y in 0..PLOT_DEPTH {
                 let offset = y * config.effective_len();
                 for x in scroll_start..scroll_stop {
-                    cropped_pixels.push(image.pixels[offset + x]);
+                    cropped_pixels.push(self.pixels[offset + x]);
                 }
             }
 

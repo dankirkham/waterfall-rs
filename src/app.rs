@@ -1,5 +1,4 @@
 use std::sync::{mpsc, Arc, RwLock};
-use std::thread;
 
 use egui::*;
 use egui_extras::image::RetainedImage;
@@ -18,6 +17,9 @@ pub struct App {
 
     plot_rx: mpsc::Receiver<Vec<RecorderData>>,
     plot_data: Vec<RecorderData>,
+
+    processor: Processor,
+    recorder: Recorder,
 }
 
 impl App {
@@ -30,16 +32,10 @@ impl App {
         let safe_config = Arc::new(RwLock::new(config));
 
         let r_config = safe_config.clone();
-        thread::spawn(move || {
-            let recorder = Recorder::new(sample_tx, r_config);
-            recorder.start();
-        });
+        let recorder = Recorder::new(sample_tx, r_config);
 
         let p_config = safe_config.clone();
-        thread::spawn(move || {
-            let mut processor = Processor::new(sample_rx, image_tx, plot_tx, p_config);
-            processor.start();
-        });
+        let processor = Processor::new(sample_rx, image_tx, plot_tx, p_config);
 
         Self {
             image_rx,
@@ -49,6 +45,9 @@ impl App {
 
             plot_rx,
             plot_data: Vec::new(),
+
+            processor,
+            recorder,
         }
     }
 
@@ -60,6 +59,8 @@ impl App {
 
 impl eframe::App for App {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
+        self.processor.run();
+
         // egui::TopBottomPanel::top("top_panel").show(ctx, |ui| {
         //     egui::menu::bar(ui, |ui| {
         //         ui.menu_button("File", |ui| {

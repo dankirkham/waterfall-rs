@@ -78,17 +78,13 @@ impl Rx {
             let symbol = self
                 .symbols
                 .par_iter()
-                .map(|syn| {
-                    let c = self.correlator.correlate_with_prepared(&lhs, syn, true);
-
-                    c.into_iter().fold(-f32::INFINITY, |a, b| a.max(b))
-                })
+                .map(|syn| self.correlator.correlate_max_with_prepared(&lhs, syn, true))
                 .enumerate()
                 .max_by(|(_, a), (_, b)| a.partial_cmp(b).unwrap_or(Ordering::Equal))
                 .map(|(index, _)| index)
                 .unwrap();
 
-            println!("Decoded: {}", symbol);
+            // println!("Decoded: {}", symbol);
         }
     }
 }

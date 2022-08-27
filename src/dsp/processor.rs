@@ -34,9 +34,8 @@ impl Processor {
         }
     }
 
-    pub fn start(&mut self) {
-        loop {
-            let samples = self.receiver.recv().unwrap();
+    pub fn run(&mut self) {
+        while let Ok(samples) = self.receiver.try_recv() {
             let config = *self.config.read().unwrap();
 
             // use std::time::Instant;
