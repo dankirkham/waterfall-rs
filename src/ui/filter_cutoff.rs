@@ -4,13 +4,13 @@ use crate::configuration::Configuration;
 use crate::units::Frequency;
 
 pub struct FilterCutoffLower<'a> {
-    f: &'a mut Frequency,
+    f: &'a mut f32,
     config: &'a Configuration,
     width: f32,
 }
 
 impl<'a> FilterCutoffLower<'a> {
-    pub fn new(f: &'a mut Frequency, config: &'a Configuration, width: f32) -> Self {
+    pub fn new(f: &'a mut f32, config: &'a Configuration, width: f32) -> Self {
         Self { f, config, width }
     }
 
@@ -20,7 +20,7 @@ impl<'a> FilterCutoffLower<'a> {
 
         let x = self
             .config
-            .freq_to_zoom_interval(self.config.tuner.carrier + *self.f);
+            .freq_to_zoom_interval(self.config.tuner.carrier() + Frequency::Hertz(*self.f));
         let pos = x * rect.width();
 
         let rect = Rect::from_x_y_ranges(
@@ -45,8 +45,8 @@ impl<'a> FilterCutoffLower<'a> {
                 if let Some(pos) = response.hover_pos() {
                     let interval_pos = pos.x / self.width;
                     let abs_hz = self.config.zoomed_interval_to_hz(interval_pos);
-                    let rel_hz = abs_hz - self.config.tuner.carrier;
-                    *self.f = rel_hz;
+                    let rel_hz = abs_hz - self.config.tuner.carrier();
+                    *self.f = rel_hz.value();
                 }
             }
         });
@@ -54,13 +54,13 @@ impl<'a> FilterCutoffLower<'a> {
 }
 
 pub struct FilterCutoffUpper<'a> {
-    f: &'a mut Frequency,
+    f: &'a mut f32,
     config: &'a Configuration,
     width: f32,
 }
 
 impl<'a> FilterCutoffUpper<'a> {
-    pub fn new(f: &'a mut Frequency, config: &'a Configuration, width: f32) -> Self {
+    pub fn new(f: &'a mut f32, config: &'a Configuration, width: f32) -> Self {
         Self { f, config, width }
     }
 
@@ -70,7 +70,7 @@ impl<'a> FilterCutoffUpper<'a> {
 
         let x = self
             .config
-            .freq_to_zoom_interval(self.config.tuner.carrier + *self.f);
+            .freq_to_zoom_interval(self.config.tuner.carrier() + Frequency::Hertz(*self.f));
         let pos = x * rect.width();
 
         let rect = Rect::from_x_y_ranges(
@@ -95,8 +95,8 @@ impl<'a> FilterCutoffUpper<'a> {
                 if let Some(pos) = response.hover_pos() {
                     let interval_pos = pos.x / self.width;
                     let abs_hz = self.config.zoomed_interval_to_hz(interval_pos);
-                    let rel_hz = abs_hz - self.config.tuner.carrier;
-                    *self.f = rel_hz;
+                    let rel_hz = abs_hz - self.config.tuner.carrier();
+                    *self.f = rel_hz.value();
                 }
             }
         });
@@ -135,13 +135,13 @@ impl FilterConnection {
 }
 
 pub struct Carrier<'a> {
-    f: &'a mut Frequency,
+    f: &'a mut f32,
     config: &'a Configuration,
     width: f32,
 }
 
 impl<'a> Carrier<'a> {
-    pub fn new(f: &'a mut Frequency, config: &'a Configuration, width: f32) -> Self {
+    pub fn new(f: &'a mut f32, config: &'a Configuration, width: f32) -> Self {
         Self { f, config, width }
     }
 
@@ -149,7 +149,7 @@ impl<'a> Carrier<'a> {
         let width = 30.0;
         let rect = ui.max_rect();
 
-        let x = self.config.freq_to_zoom_interval(*self.f);
+        let x = self.config.freq_to_zoom_interval(Frequency::Hertz(*self.f));
         let pos = x * rect.width();
 
         let rect = Rect::from_center_size(
@@ -173,7 +173,7 @@ impl<'a> Carrier<'a> {
                 if let Some(pos) = response.hover_pos() {
                     let interval_pos = pos.x / self.width;
                     let hz = self.config.zoomed_interval_to_hz(interval_pos);
-                    *self.f = hz;
+                    *self.f = hz.value();
                 }
             }
         });

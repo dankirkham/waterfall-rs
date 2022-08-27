@@ -1,10 +1,12 @@
 mod tuner_settings;
 
+use crate::input::InputSource;
 use crate::units::Frequency;
 pub use tuner_settings::TunerSettings;
 
 #[derive(Clone)]
 pub struct Configuration {
+    pub input_source: InputSource,
     pub audio_sample_rate: usize,
     pub fft_depth: usize,
     pub min_db: f32,
@@ -29,6 +31,7 @@ pub struct Configuration {
 impl Default for Configuration {
     fn default() -> Self {
         Self {
+            input_source: InputSource::Synth,
             audio_sample_rate: 44100,
             fft_depth: 8192,
             min_db: -40.0,

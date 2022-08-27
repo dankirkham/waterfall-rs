@@ -6,6 +6,7 @@ use cpal::traits::{DeviceTrait, HostTrait, StreamTrait};
 use crate::configuration::Configuration;
 use crate::filter::Filter;
 use crate::filter::HighPassFilter;
+use crate::input::Source;
 use crate::types::SampleType;
 use crate::units::Frequency;
 
@@ -75,8 +76,13 @@ impl Audio {
             stream,
         }
     }
+}
 
-    pub fn run(&mut self, _config: &Configuration) {
+impl Source for Audio {
+    fn run(&mut self, _config: &Configuration) {
     }
 
+    fn get_tx(&self) -> Sender<Vec<SampleType>> {
+        self.sender.clone()
+    }
 }

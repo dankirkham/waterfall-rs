@@ -2,6 +2,7 @@ use std::sync::mpsc::Sender;
 use wasm_timer::Instant;
 
 use crate::configuration::Configuration;
+use crate::input::Source;
 use crate::synth::{Ft8, Samples};
 use crate::types::SampleType;
 use crate::units::Frequency;
@@ -27,8 +28,10 @@ impl Synth {
             last_time: None,
         }
     }
+}
 
-    pub fn run(&mut self, config: &Configuration) {
+impl Source for Synth {
+    fn run(&mut self, config: &Configuration) {
         let sample_rate = Frequency::Hertz(config.audio_sample_rate as f32);
         if sample_rate.value() != self.sample_rate.value() {
             self.sample_rate = Frequency::Hertz(config.audio_sample_rate as f32);
@@ -52,5 +55,9 @@ impl Synth {
         } else {
             Some(Instant::now())
         };
+    }
+
+    fn get_tx(&self) -> Sender<Vec<SampleType>> {
+        self.sender.clone()
     }
 }

@@ -1,6 +1,7 @@
 use egui::*;
 
 use crate::configuration::Configuration;
+use crate::input::InputSource;
 
 pub struct Settings<'a> {
     config: &'a mut Configuration,
@@ -12,7 +13,13 @@ impl<'a> Settings<'a> {
     }
 
     pub fn ui(&mut self, ui: &mut egui::Ui) {
-        ui.label("Waterfall Settings");
+        ui.label("Source Settings");
+        egui::ComboBox::from_label("Source")
+            .selected_text(format!("{:?}", self.config.input_source))
+            .show_ui(ui, |ui| {
+                ui.selectable_value(&mut self.config.input_source, InputSource::Audio, "Audio");
+                ui.selectable_value(&mut self.config.input_source, InputSource::Synth, "Synth");
+            });
         egui::ComboBox::from_label("Sample Rate")
             .selected_text(format!("{:?}", self.config.audio_sample_rate))
             .show_ui(ui, |ui| {
@@ -20,6 +27,7 @@ impl<'a> Settings<'a> {
                 ui.selectable_value(&mut self.config.audio_sample_rate, 48000, "48 kHz");
                 ui.selectable_value(&mut self.config.audio_sample_rate, 96000, "96 kHz");
             });
+        ui.label("Waterfall Settings");
         egui::ComboBox::from_label("FFT Depth")
             .selected_text(format!("{:?}", self.config.fft_depth))
             .show_ui(ui, |ui| {
@@ -50,8 +58,27 @@ impl<'a> Settings<'a> {
         ui.add(egui::Slider::new(&mut self.config.scroll, 0.0..=1.0).text("Scroll"));
 
         ui.label("Tuner Settings");
-        ui.label(format!("Bandpass Low: {}", self.config.tuner.lower));
-        ui.label(format!("Bandpass High: {}", self.config.tuner.upper));
-        ui.label(format!("Carrier: {}", self.config.tuner.carrier));
+        egui::Grid::new("tuner_settings").show(ui, |ui| {
+            ui.add(
+                egui::DragValue::new(&mut self.config.tuner.carrier)
+                    // .custom_formatter(|n, _| format!("{}", Frequency::Hertz(n)))
+            );
+            ui.label("Carrier");
+            ui.end_row();
+
+            ui.add(
+                egui::DragValue::new(&mut self.config.tuner.lower)
+                    // .custom_formatter(|n, _| format!("{}", Frequency::Hertz(n)))
+            );
+            ui.label("Bandpass Lower");
+            ui.end_row();
+
+            ui.add(
+                egui::DragValue::new(&mut self.config.tuner.upper)
+                    // .custom_formatter(|n, _| format!("{}", Frequency::Hertz(n)))
+            );
+            ui.label("Bandpass Upper");
+            ui.end_row();
+        });
     }
 }

@@ -62,7 +62,7 @@ impl Rx {
             let bandpassed = samples.into_iter().map(|sample| bpf.next(sample));
 
             // LO Mix
-            let if_carrier = config.tuner.carrier - Frequency::Hertz(100.001);
+            let if_carrier = config.tuner.carrier() - Frequency::Hertz(100.001);
             let mut carrier = Sine::new(self.sample_rate, if_carrier);
             let mixed = bandpassed.map(|sample| sample * carrier.next());
 

@@ -5,7 +5,7 @@ use egui_extras::image::RetainedImage;
 
 use crate::configuration::Configuration;
 use crate::dsp::Processor;
-use crate::input::Source;
+use crate::input::{Audio, InputSource, Source, Synth};
 use crate::types::SampleType;
 use crate::ui::{Scope, Settings, WaterfallPlot};
 
@@ -19,7 +19,9 @@ pub struct App {
     plot_data: Vec<SampleType>,
 
     processor: Processor,
-    source: Source,
+
+    source: Box<dyn Source>,
+    input_source: InputSource,
 }
 
 impl App {
@@ -30,8 +32,10 @@ impl App {
 
         let config = Configuration::default();
 
-        let source = Source::new(sample_tx, &config);
         let processor = Processor::new(sample_rx, image_tx, plot_tx, &config);
+
+        let input_source = config.input_source;
+        let source = Self::create_source(&config, sample_tx);
 
         Self {
             image_rx,
@@ -42,13 +46,28 @@ impl App {
             plot_data: Vec::new(),
 
             processor,
+
             source,
+            input_source,
+        }
+    }
+
+    fn create_source(config: &Configuration, tx: mpsc::Sender<Vec<SampleType>>) -> Box<dyn Source> {
+        match config.input_source {
+            InputSource::Synth => Box::new(Synth::new(tx, &config)),
+            InputSource::Audio => Box::new(Audio::new(tx, &config)),
         }
     }
 }
 
 impl eframe::App for App {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
+        if self.input_source != self.config.input_source {
+            self.input_source = self.config.input_source;
+            let tx = self.source.get_tx();
+            self.source = Self::create_source(&self.config, tx);
+        }
+
         self.source.run(&self.config);
         self.processor.run(&self.config);
 

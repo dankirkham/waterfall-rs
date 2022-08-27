@@ -1,5 +1,21 @@
 mod audio;
 mod synth;
 
-// pub type Source = audio::Audio;
-pub type Source = synth::Synth;
+use std::sync::mpsc::Sender;
+
+use crate::configuration::Configuration;
+use crate::types::SampleType;
+
+#[derive(Copy, Clone, Debug, PartialEq)]
+pub enum InputSource {
+    Audio,
+    Synth,
+}
+
+pub trait Source {
+    fn run(&mut self, config: &Configuration);
+    fn get_tx(&self) -> Sender<Vec<SampleType>>;
+}
+
+pub use audio::Audio;
+pub use synth::Synth;
