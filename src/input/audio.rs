@@ -1,7 +1,5 @@
 use std::sync::mpsc::Sender;
 use std::sync::{Arc, RwLock};
-use std::thread::sleep;
-use std::time::Duration;
 
 use cpal::Stream;
 use cpal::traits::{DeviceTrait, HostTrait, StreamTrait};
@@ -12,8 +10,6 @@ use crate::filter::HighPassFilter;
 use crate::types::SampleType;
 use crate::units::Frequency;
 
-// use crate::synth::Ft8;
-
 pub struct Audio {
     sender: Sender<Vec<SampleType>>,
     // config: Arc<RwLock<Configuration>>,
@@ -22,6 +18,9 @@ pub struct Audio {
 }
 
 impl Audio {
+    pub fn run(&mut self) {
+    }
+
     pub fn new(sender: Sender<Vec<SampleType>>, config: Arc<RwLock<Configuration>>) -> Self {
         let sample_rate = Frequency::Hertz(config.read().unwrap().audio_sample_rate as f32);
 

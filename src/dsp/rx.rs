@@ -1,7 +1,5 @@
 use std::cmp::Ordering;
 
-use rayon::prelude::*;
-
 use crate::configuration::Configuration;
 use crate::dsp::aggregator::Aggregator;
 use crate::dsp::correlator::{Correlator, OperandData};
@@ -77,7 +75,7 @@ impl Rx {
             let lhs = self.correlator.prepare_lhs(&signal);
             let symbol = self
                 .symbols
-                .par_iter()
+                .iter()
                 .map(|syn| self.correlator.correlate_max_with_prepared(&lhs, syn, true))
                 .enumerate()
                 .max_by(|(_, a), (_, b)| a.partial_cmp(b).unwrap_or(Ordering::Equal))

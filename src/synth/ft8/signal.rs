@@ -12,7 +12,6 @@ pub struct Ft8 {
 }
 
 impl Ft8 {
-    #[allow(dead_code)]
     pub fn new(sample_rate: Frequency, carrier: Frequency) -> Self {
         let signaling_interval = 0.160;
         let symbol = 0;
