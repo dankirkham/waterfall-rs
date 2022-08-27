@@ -1,5 +1,5 @@
 use std::collections::VecDeque;
-use std::sync::{Arc, RwLock};
+use std::sync::Arc;
 use std::sync::mpsc::Sender;
 
 use egui::{Color32, ColorImage};
@@ -15,7 +15,6 @@ use super::turbo::get_color;
 
 pub struct WaterfallProcessor {
     fft: Arc<dyn RealToComplex<f32>>,
-    config: Arc<RwLock<Configuration>>,
     fft_depth: usize,
     image: Option<ColorImage>,
     pixels: VecDeque<Color32>,
@@ -27,19 +26,18 @@ pub struct WaterfallProcessor {
 
 impl WaterfallProcessor {
     pub fn new(
-        config: Arc<RwLock<Configuration>>,
         sender: Sender<ColorImage>,
+        config: &Configuration,
     ) -> Self {
         let mut planner = RealFftPlanner::<f32>::new();
-        let fft_depth = config.read().unwrap().fft_depth;
-        let scroll = config.read().unwrap().scroll;
+        let fft_depth = config.fft_depth;
+        let scroll = config.scroll;
         let fft = planner.plan_fft_forward(fft_depth);
         let aggregator = Aggregator::new(fft_depth);
 
         Self {
             fft,
             fft_depth,
-            config,
             image: None,
             pixels: VecDeque::new(),
             scroll,
@@ -49,8 +47,7 @@ impl WaterfallProcessor {
         }
     }
 
-    pub fn run(&mut self, new_samples: Vec<SampleType>) {
-        let config = *self.config.read().unwrap();
+    pub fn run(&mut self, new_samples: Vec<SampleType>, config: &Configuration) {
         self.aggregator.aggregate(new_samples);
 
         while let Some(mut samples) = self.aggregator.get_slice() {
@@ -103,6 +100,7 @@ impl WaterfallProcessor {
             for y in 0..PLOT_DEPTH {
                 let offset = y * config.effective_len();
                 for x in scroll_start..scroll_stop {
+                    // TODO: The access on pixels can be out of bounds
                     cropped_pixels.push(self.pixels[offset + x]);
                 }
             }

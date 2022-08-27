@@ -1,5 +1,4 @@
 use std::sync::mpsc::Sender;
-use std::sync::{Arc, RwLock};
 
 use cpal::Stream;
 use cpal::traits::{DeviceTrait, HostTrait, StreamTrait};
@@ -12,17 +11,13 @@ use crate::units::Frequency;
 
 pub struct Audio {
     sender: Sender<Vec<SampleType>>,
-    // config: Arc<RwLock<Configuration>>,
     sample_rate: Frequency,
     stream: Stream,
 }
 
 impl Audio {
-    pub fn run(&mut self) {
-    }
-
-    pub fn new(sender: Sender<Vec<SampleType>>, config: Arc<RwLock<Configuration>>) -> Self {
-        let sample_rate = Frequency::Hertz(config.read().unwrap().audio_sample_rate as f32);
+    pub fn new(sender: Sender<Vec<SampleType>>, config: &Configuration) -> Self {
+        let sample_rate = Frequency::Hertz(config.audio_sample_rate as f32);
 
         let host = cpal::default_host();
 
@@ -80,4 +75,8 @@ impl Audio {
             stream,
         }
     }
+
+    pub fn run(&mut self, _config: &Configuration) {
+    }
+
 }

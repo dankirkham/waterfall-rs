@@ -1,5 +1,4 @@
 use std::sync::mpsc::{Receiver, Sender};
-use std::sync::{Arc, RwLock};
 
 use egui::ColorImage;
 
@@ -11,7 +10,6 @@ use super::waterfall_processor::WaterfallProcessor;
 
 pub struct Processor {
     receiver: Receiver<Vec<SampleType>>,
-    config: Arc<RwLock<Configuration>>,
     rx: Rx,
     wp: WaterfallProcessor,
 }
@@ -21,28 +19,25 @@ impl Processor {
         receiver: Receiver<Vec<SampleType>>,
         sender: Sender<ColorImage>,
         _plot: Sender<Vec<SampleType>>,
-        config: Arc<RwLock<Configuration>>,
+        config: &Configuration,
     ) -> Self {
-        let rx = Rx::new();
-        let wp = WaterfallProcessor::new(config.clone(), sender);
+        let rx = Rx::new(config);
+        let wp = WaterfallProcessor::new(sender, config);
 
         Self {
             receiver,
-            config,
             rx,
             wp,
         }
     }
 
-    pub fn run(&mut self) {
+    pub fn run(&mut self, config: &Configuration) {
         while let Ok(samples) = self.receiver.try_recv() {
-            let config = *self.config.read().unwrap();
-
             // use std::time::Instant;
             // let now = Instant::now();
 
-            self.rx.run(samples.clone(), config.clone());
-            self.wp.run(samples);
+            self.rx.run(samples.clone(), config);
+            self.wp.run(samples, config);
 
             // let elapsed = now.elapsed();
             // println!("Elapsed: {:.2?}", elapsed);

@@ -1,4 +1,4 @@
-use std::sync::{mpsc, Arc, RwLock};
+use std::sync::mpsc;
 
 use egui::*;
 use egui_extras::image::RetainedImage;
@@ -13,7 +13,6 @@ pub struct App {
     image_rx: mpsc::Receiver<ColorImage>,
     image: Option<RetainedImage>,
 
-    safe_config: Arc<RwLock<Configuration>>,
     config: Configuration,
 
     plot_rx: mpsc::Receiver<Vec<SampleType>>,
@@ -30,19 +29,14 @@ impl App {
         let (plot_tx, plot_rx) = mpsc::channel::<Vec<SampleType>>();
 
         let config = Configuration::default();
-        let safe_config = Arc::new(RwLock::new(config));
 
-        let r_config = safe_config.clone();
-        let source = Source::new(sample_tx, r_config);
-
-        let p_config = safe_config.clone();
-        let processor = Processor::new(sample_rx, image_tx, plot_tx, p_config);
+        let source = Source::new(sample_tx, &config);
+        let processor = Processor::new(sample_rx, image_tx, plot_tx, &config);
 
         Self {
             image_rx,
             image: None,
             config,
-            safe_config,
 
             plot_rx,
             plot_data: Vec::new(),
@@ -51,17 +45,12 @@ impl App {
             source,
         }
     }
-
-    fn update_config(&mut self) {
-        let mut sf = self.safe_config.write().unwrap();
-        *sf = self.config;
-    }
 }
 
 impl eframe::App for App {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
-        self.source.run();
-        self.processor.run();
+        self.source.run(&self.config);
+        self.processor.run(&self.config);
 
         // egui::TopBottomPanel::top("top_panel").show(ctx, |ui| {
         //     egui::menu::bar(ui, |ui| {
@@ -131,10 +120,6 @@ impl eframe::App for App {
                 ui.label(format!("Bandpass Low: {}", self.config.tuner.lower));
                 ui.label(format!("Bandpass High: {}", self.config.tuner.upper));
                 ui.label(format!("Carrier: {}", self.config.tuner.carrier));
-
-                if ui.add(egui::Button::new("Apply")).clicked() {
-                    self.update_config();
-                }
             });
 
         egui::CentralPanel::default()

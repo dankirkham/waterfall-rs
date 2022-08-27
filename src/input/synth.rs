@@ -1,5 +1,4 @@
 use std::sync::mpsc::Sender;
-use std::sync::{Arc, RwLock};
 use wasm_timer::Instant;
 
 use crate::configuration::Configuration;
@@ -16,8 +15,8 @@ pub struct Synth {
 }
 
 impl Synth {
-    pub fn new(sender: Sender<Vec<SampleType>>, config: Arc<RwLock<Configuration>>) -> Self {
-        let sample_rate = Frequency::Hertz(config.read().unwrap().audio_sample_rate as f32);
+    pub fn new(sender: Sender<Vec<SampleType>>, config: &Configuration) -> Self {
+        let sample_rate = Frequency::Hertz(config.audio_sample_rate as f32);
         let carrier = Frequency::Hertz(2500.0);
         let signal = Ft8::new(sample_rate, carrier);
 
@@ -29,7 +28,14 @@ impl Synth {
         }
     }
 
-    pub fn run(&mut self) {
+    pub fn run(&mut self, config: &Configuration) {
+        let sample_rate = Frequency::Hertz(config.audio_sample_rate as f32);
+        if sample_rate.value() != self.sample_rate.value() {
+            self.sample_rate = Frequency::Hertz(config.audio_sample_rate as f32);
+            let carrier = Frequency::Hertz(2500.0);
+            self.signal = Ft8::new(sample_rate, carrier);
+        }
+
         self.last_time = if let Some(last_time) = self.last_time {
             let now = Instant::now();
 
