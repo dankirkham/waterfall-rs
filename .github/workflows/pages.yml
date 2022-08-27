@@ -31,6 +31,8 @@ jobs:
         run: cargo install --locked trunk
       - name: Build with trunk
         run: trunk build --release
+        env:
+          TRUNK_BUILD_PUBLIC_URL: "/waterfall-rs/"
       - name: Setup Pages
         uses: actions/configure-pages@v2
       - name: Upload artifact
