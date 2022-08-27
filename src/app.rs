@@ -99,14 +99,14 @@ impl eframe::App for App {
             toolbar.ui(ui);
         });
 
-        egui::Window::new("Settings")
+        egui::Window::new("⚙️ Settings")
             .open(&mut self.show.settings)
             .show(ctx, |ui| {
                 let mut settings = Settings::new(&mut self.config);
                 settings.ui(ui);
             });
 
-        egui::Window::new("Scope")
+        egui::Window::new("🗠 Scope")
             .open(&mut self.show.scope)
             .show(ctx, |ui| {
                 let mut scope = Scope::new(&self.plot_data);
