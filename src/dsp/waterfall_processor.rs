@@ -48,6 +48,13 @@ impl WaterfallProcessor {
     }
 
     pub fn run(&mut self, new_samples: Vec<SampleType>, config: &Configuration) {
+        if self.fft_depth != config.fft_depth {
+            self.fft_depth = config.fft_depth;
+            let mut planner = RealFftPlanner::<f32>::new();
+            self.fft = planner.plan_fft_forward(self.fft_depth);
+            self.aggregator = Aggregator::new(self.fft_depth);
+        }
+
         self.aggregator.aggregate(new_samples);
 
         while let Some(mut samples) = self.aggregator.get_slice() {

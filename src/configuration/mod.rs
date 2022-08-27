@@ -3,7 +3,7 @@ mod tuner_settings;
 use crate::units::Frequency;
 pub use tuner_settings::TunerSettings;
 
-#[derive(Copy, Clone)]
+#[derive(Clone)]
 pub struct Configuration {
     pub audio_sample_rate: usize,
     pub fft_depth: usize,
