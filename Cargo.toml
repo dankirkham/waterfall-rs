@@ -13,10 +13,13 @@ eframe = { git = "https://github.com/emilk/egui", rev = "898f4804" }
 egui = { git = "https://github.com/emilk/egui", rev = "898f4804" }
 egui_extras = { git = "https://github.com/emilk/egui", rev = "898f4804" }
 float-cmp = "0.4.0"
+#futures = { version = "0.3.23", feature = ["executor"] }
 rand = "0.8.5"
 #rayon = "1.5.3"
 realfft = "3.0.0"
 rustfft = "6.0.1"
+#tokio = { version = "1.20.1", features = ["full"] }
+tokio = { version = "1.20.1", features = ["sync"] }
 wasm-timer = "0.2.5"
 
 # web:

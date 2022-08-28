@@ -1,7 +1,7 @@
-use std::sync::mpsc::Sender;
-
 use cpal::Stream;
 use cpal::traits::{DeviceTrait, HostTrait, StreamTrait};
+use tokio::sync::mpsc::Sender;
+use tokio::sync::mpsc::error::TrySendError;
 
 use crate::configuration::Configuration;
 use crate::filter::Filter;
@@ -57,7 +57,12 @@ impl Audio {
                     let filtered: Vec<f32> = samples.map(|sample| filter.next(sample)).collect();
                     // let filtered: Vec<f32> = samples.map(|sample| ft8.next()).collect();
 
-                    stream_sender.send(filtered).unwrap();
+                    if let Err(err) = stream_sender.try_send(filtered) {
+                        match err {
+                            TrySendError::Full(_) => println!("Waterfall processor falling behind"),
+                            TrySendError::Closed(_) => (),
+                        }
+                    }
                 },
                 err_fn,
             ),

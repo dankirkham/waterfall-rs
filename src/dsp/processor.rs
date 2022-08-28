@@ -1,6 +1,5 @@
-use std::sync::mpsc::{Receiver, Sender};
-
 use egui::ColorImage;
+use tokio::sync::mpsc::{Receiver, Sender};
 
 use crate::configuration::Configuration;
 use crate::types::SampleType;

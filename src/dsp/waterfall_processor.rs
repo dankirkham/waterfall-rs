@@ -1,11 +1,12 @@
 use std::collections::VecDeque;
 use std::sync::Arc;
-use std::sync::mpsc::Sender;
 
 use egui::{Color32, ColorImage};
 use realfft::RealFftPlanner;
 use realfft::RealToComplex;
 use rustfft::num_complex::Complex;
+use tokio::sync::mpsc::Sender;
+use tokio::sync::mpsc::error::TrySendError;
 
 use crate::configuration::Configuration;
 use crate::dsp::aggregator::Aggregator;
@@ -58,6 +59,17 @@ impl WaterfallProcessor {
         self.aggregator.aggregate(new_samples);
 
         while let Some(mut samples) = self.aggregator.get_slice() {
+            let permit = match self.sender.try_reserve() {
+                Err(err) => {
+                    match err {
+                        TrySendError::Full(_) => println!("Waterfall UI is falling behind, dropping samples."),
+                        TrySendError::Closed(_) => (),
+                    }
+                    continue;
+                },
+                Ok(permit) => permit,
+            };
+
             if let Some(image) = &self.image {
                 if image.size[0] != config.effective_len() {
                     let image =
@@ -117,7 +129,7 @@ impl WaterfallProcessor {
                 pixels: cropped_pixels,
             };
 
-            self.sender.send(cropped_image).unwrap();
+            permit.send(cropped_image);
         }
     }
 }

@@ -1,7 +1,7 @@
 mod audio;
 mod synth;
 
-use std::sync::mpsc::Sender;
+use tokio::sync::mpsc::Sender;
 
 use crate::configuration::Configuration;
 use crate::types::SampleType;

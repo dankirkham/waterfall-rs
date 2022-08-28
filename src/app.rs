@@ -1,7 +1,6 @@
-use std::sync::mpsc;
-
 use egui::*;
 use egui_extras::image::RetainedImage;
+use tokio::sync::mpsc;
 
 use crate::configuration::Configuration;
 use crate::dsp::Processor;
@@ -28,9 +27,9 @@ pub struct App {
 
 impl App {
     pub fn new(_cc: &eframe::CreationContext<'_>) -> Self {
-        let (image_tx, image_rx) = mpsc::channel::<ColorImage>();
-        let (sample_tx, sample_rx) = mpsc::channel::<Vec<SampleType>>();
-        let (plot_tx, plot_rx) = mpsc::channel::<Vec<SampleType>>();
+        let (image_tx, image_rx) = mpsc::channel::<ColorImage>(5);
+        let (sample_tx, sample_rx) = mpsc::channel::<Vec<SampleType>>(1024);
+        let (plot_tx, plot_rx) = mpsc::channel::<Vec<SampleType>>(5);
 
         let config = Configuration::default();
 

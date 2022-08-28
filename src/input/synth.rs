@@ -1,4 +1,4 @@
-use std::sync::mpsc::Sender;
+use tokio::sync::mpsc::Sender;
 use wasm_timer::Instant;
 
 use crate::configuration::Configuration;
@@ -48,7 +48,8 @@ impl Source for Synth {
             if new_samples > 0 {
                 let mut samples: Vec<SampleType> = Vec::with_capacity(new_samples);
                 (0..new_samples).into_iter().for_each(|_| samples.push(self.signal.next()));
-                self.sender.send(samples);
+
+                self.sender.try_send(samples).unwrap();
             }
 
             Some(now)
