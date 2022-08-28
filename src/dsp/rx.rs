@@ -1,5 +1,8 @@
 use std::cmp::Ordering;
 
+use tokio::sync::mpsc::Sender;
+use tokio::sync::mpsc::error::TrySendError;
+
 use crate::configuration::Configuration;
 use crate::dsp::aggregator::Aggregator;
 use crate::dsp::correlator::{Correlator, OperandData};
@@ -14,10 +17,14 @@ pub struct Rx {
     correlator: Correlator,
     aggregator: Aggregator,
     sample_rate: Frequency,
+    plot_sender: Sender<Vec<SampleType>>,
 }
 
 impl Rx {
-    pub fn new(config: &Configuration) -> Self {
+    pub fn new(
+        plot_sender: Sender<Vec<SampleType>>,
+        config: &Configuration
+    ) -> Self {
         let mut symbols: Vec<OperandData> = Vec::with_capacity(8);
 
         let sample_rate = Frequency::Hertz(config.audio_sample_rate as f32);
@@ -41,13 +48,14 @@ impl Rx {
             correlator,
             aggregator,
             sample_rate,
+            plot_sender,
         }
     }
 
     pub fn run(&mut self, new_samples: Vec<SampleType>, config: &Configuration) {
         let sample_rate = Frequency::Hertz(config.audio_sample_rate as f32);
         if sample_rate.value() != self.sample_rate.value() {
-            *self = Self::new(config);
+            *self = Self::new(self.plot_sender.clone(), config);
         }
 
         self.aggregator.aggregate(new_samples);
@@ -75,6 +83,13 @@ impl Rx {
 
             // Collect into signal
             let signal: Vec<SampleType> = low_passed.collect();
+
+            if let Err(err) = self.plot_sender.try_send(signal.clone()) {
+                match err {
+                    TrySendError::Full(_) => println!("Plot ui falling behind"),
+                    TrySendError::Closed(_) => (),
+                }
+            }
 
             // Correlate
             let lhs = self.correlator.prepare_lhs(&signal);

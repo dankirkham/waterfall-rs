@@ -17,10 +17,10 @@ impl Processor {
     pub fn new(
         receiver: Receiver<Vec<SampleType>>,
         sender: Sender<ColorImage>,
-        _plot: Sender<Vec<SampleType>>,
+        plot_sender: Sender<Vec<SampleType>>,
         config: &Configuration,
     ) -> Self {
-        let rx = Rx::new(config);
+        let rx = Rx::new(plot_sender, config);
         let wp = WaterfallProcessor::new(sender, config);
 
         Self {
