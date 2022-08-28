@@ -1,4 +1,6 @@
-pub mod filter_cutoff;
+mod about;
+mod filter_cutoff;
+mod messages;
 mod scope;
 mod settings;
 mod toolbar;
@@ -6,6 +8,8 @@ mod waterfall_plot;
 mod waterfall_ticks;
 mod windows;
 
+pub use about::About;
+pub use messages::Messages;
 pub use scope::Scope;
 pub use settings::Settings;
 pub use toolbar::Toolbar;

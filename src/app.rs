@@ -7,7 +7,7 @@ use crate::configuration::Configuration;
 use crate::dsp::Processor;
 use crate::input::{Audio, InputSource, Source, Synth};
 use crate::types::SampleType;
-use crate::ui::{Scope, Settings, Toolbar, WaterfallPlot, Windows};
+use crate::ui::{About, Messages, Scope, Settings, Toolbar, WaterfallPlot, Windows};
 
 pub struct App {
     image_rx: mpsc::Receiver<ColorImage>,
@@ -99,18 +99,32 @@ impl eframe::App for App {
             toolbar.ui(ui);
         });
 
-        egui::Window::new("⚙️ Settings")
+        egui::Window::new("🔧 Settings")
             .open(&mut self.show.settings)
             .show(ctx, |ui| {
                 let mut settings = Settings::new(&mut self.config);
                 settings.ui(ui);
             });
 
-        egui::Window::new("🗠 Scope")
+        egui::Window::new("🗠 Oscilloscope")
             .open(&mut self.show.scope)
             .show(ctx, |ui| {
                 let mut scope = Scope::new(&self.plot_data);
                 scope.ui(ui);
+            });
+
+        egui::Window::new("❔ About")
+            .open(&mut self.show.about)
+            .show(ctx, |ui| {
+                let mut about = About::new();
+                about.ui(ui);
+            });
+
+        egui::Window::new("📻 Messages")
+            .open(&mut self.show.messages)
+            .show(ctx, |ui| {
+                let mut messages = Messages::new();
+                messages.ui(ui);
             });
 
         egui::CentralPanel::default()

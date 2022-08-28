@@ -13,8 +13,10 @@ impl<'a> Toolbar<'a> {
 
     pub fn ui(&mut self, ui: &mut egui::Ui) {
         ui.horizontal(|ui| {
-            ui.toggle_value(&mut self.show.settings, "⚙️ Settings");
-            ui.toggle_value(&mut self.show.scope, "🗠 Scope");
+            ui.toggle_value(&mut self.show.settings, "🔧 Settings");
+            ui.toggle_value(&mut self.show.scope, "🗠 Oscilloscope");
+            ui.toggle_value(&mut self.show.messages, "📻 Messages");
+            ui.toggle_value(&mut self.show.about, "❔ About");
         });
     }
 }
