@@ -28,7 +28,8 @@ impl Rx {
         let mut symbols: Vec<OperandData> = Vec::with_capacity(8);
 
         let sample_rate = Frequency::Hertz(config.audio_sample_rate as f32);
-        let carrier = Frequency::Hertz(100.0);
+        // let carrier = Frequency::Hertz(100.0);
+        let carrier = Frequency::Hertz(0.0);
 
         let buffer_len = (sample_rate.value() / 6.25) as usize;
         let correlator = Correlator::new(buffer_len);
@@ -37,9 +38,9 @@ impl Rx {
         for symbol in 0..8 {
             let mut gen = Symbol::with_amplitude(sample_rate, carrier, symbol as f32, 1.0);
 
-            let len: usize =
-                (sample_rate.value() / (carrier.value() + (symbol as f32) * 6.25)) as usize;
-            let syn: Vec<SampleType> = (0..len).into_iter().map(|_| gen.next()).collect();
+            // let len: usize =
+            //     (sample_rate.value() / (carrier.value() + (symbol as f32) * 6.25)) as usize;
+            let syn: Vec<SampleType> = (0..buffer_len).into_iter().map(|_| gen.next()).collect();
 
             symbols.push(correlator.prepare_rhs(&syn));
         }
@@ -62,15 +63,28 @@ impl Rx {
 
         while let Some(samples) = self.aggregator.get_slice() {
             // Bandpass
-            let mut bpf = BandPassFilter::from_frequency(
+            let mut bpf1 = BandPassFilter::from_frequency(
                 config.tuner.lower_absolute(), // Low
                 config.tuner.upper_absolute(), // High
                 self.sample_rate,                   // SampleRate
             );
-            let bandpassed = samples.into_iter().map(|sample| bpf.next(sample));
+            let mut bpf2 = BandPassFilter::from_frequency(
+                config.tuner.lower_absolute(), // Low
+                config.tuner.upper_absolute(), // High
+                self.sample_rate,                   // SampleRate
+            );
+            let mut bpf3 = BandPassFilter::from_frequency(
+                config.tuner.lower_absolute(), // Low
+                config.tuner.upper_absolute(), // High
+                self.sample_rate,                   // SampleRate
+            );
+            let bp1 = samples.into_iter().map(|sample| bpf1.next(sample));
+            let bp2 = bp1.map(|sample| bpf2.next(sample));
+            let bandpassed = bp2.map(|sample| bpf3.next(sample));
 
             // LO Mix
-            let if_carrier = config.tuner.carrier() - Frequency::Hertz(100.001);
+            // let if_carrier = config.tuner.carrier() - Frequency::Hertz(100.001);
+            let if_carrier = config.tuner.carrier();
             let mut carrier = Sine::new(self.sample_rate, if_carrier);
             let mixed = bandpassed.map(|sample| sample * carrier.next());
 
@@ -102,7 +116,7 @@ impl Rx {
                 .map(|(index, _)| index)
                 .unwrap();
 
-            // println!("Decoded: {}", symbol);
+            println!("Decoded: {}", symbol);
         }
     }
 }

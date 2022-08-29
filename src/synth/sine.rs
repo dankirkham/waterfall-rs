@@ -29,7 +29,7 @@ impl Samples for Sine {
     fn next(&mut self) -> f32 {
         let t = (self.sample as f32) / self.sample_rate.value();
 
-        let val = self.amplitude * (2.0 * PI * self.frequency.value() * t).sin();
+        let val = self.amplitude * (2.0 * PI * self.frequency.value() * t).cos();
 
         self.sample += 1;
 

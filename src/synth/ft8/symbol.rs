@@ -39,7 +39,7 @@ impl Samples for Symbol {
         let signaling_interval = 0.160;
         let phase = modulation_index * self.symbol / signaling_interval;
 
-        let val = self.amplitude * (2.0 * PI * ((self.carrier.value() + phase) * t)).sin();
+        let val = self.amplitude * (2.0 * PI * ((self.carrier.value() + phase) * t)).cos();
 
         self.sample += 1;
 
