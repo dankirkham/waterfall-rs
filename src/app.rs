@@ -108,7 +108,7 @@ impl eframe::App for App {
         egui::Window::new("🗠 Oscilloscope")
             .open(&mut self.show.scope)
             .show(ctx, |ui| {
-                let mut scope = Scope::new(&self.plot_data);
+                let mut scope = Scope::new(&mut self.config, &self.plot_data);
                 scope.ui(ui);
             });
 

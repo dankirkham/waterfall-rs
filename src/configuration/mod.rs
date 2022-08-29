@@ -1,8 +1,10 @@
+mod scope_settings;
 mod tuner_settings;
 
 use crate::input::InputSource;
 use crate::units::Frequency;
 pub use tuner_settings::{DecoderType, TunerSettings};
+pub use scope_settings::{AxisMode, ScopeMode, ScopeSettings, TriggerMode, TriggerSettings};
 
 #[derive(Clone)]
 pub struct Configuration {
@@ -26,6 +28,8 @@ pub struct Configuration {
     pub scroll: f32,
 
     pub tuner: TunerSettings,
+
+    pub scope: ScopeSettings,
 }
 
 impl Default for Configuration {
@@ -40,6 +44,7 @@ impl Default for Configuration {
             zoom: 1.0,
             scroll: 0.0,
             tuner: TunerSettings::default(),
+            scope: ScopeSettings::default(),
         }
     }
 }
