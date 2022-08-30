@@ -27,9 +27,9 @@ pub struct App {
 
 impl App {
     pub fn new(_cc: &eframe::CreationContext<'_>) -> Self {
-        let (image_tx, image_rx) = mpsc::channel::<ColorImage>(2);
+        let (image_tx, image_rx) = mpsc::channel::<ColorImage>(5);
         let (sample_tx, sample_rx) = mpsc::channel::<Vec<SampleType>>(1024);
-        let (plot_tx, plot_rx) = mpsc::channel::<Vec<SampleType>>(2);
+        let (plot_tx, plot_rx) = mpsc::channel::<Vec<SampleType>>(5);
 
         let config = Configuration::default();
 
@@ -85,7 +85,8 @@ impl eframe::App for App {
         // });
 
         while let Ok(im) = self.image_rx.try_recv() {
-            let ri = RetainedImage::from_color_image("waterfall-image", im.to_owned());
+            let ri = RetainedImage::from_color_image("waterfall-image", im.to_owned())
+                .with_texture_filter(TextureFilter::Nearest);
             self.image = Some(ri);
         }
 
