@@ -30,6 +30,10 @@ impl Symbol {
             amplitude,
         }
     }
+
+    pub fn set_symbol(&mut self, symbol: f32) {
+        self.symbol = symbol;
+    }
 }
 
 impl Samples for Symbol {
@@ -42,6 +46,10 @@ impl Samples for Symbol {
         let val = self.amplitude * (2.0 * PI * ((self.carrier.value() + phase) * t)).cos();
 
         self.sample += 1;
+
+        if self.sample == (self.sample_rate.value() * signaling_interval) as u64 {
+            self.sample = 0;
+        }
 
         val
     }

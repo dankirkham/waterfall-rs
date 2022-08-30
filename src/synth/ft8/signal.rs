@@ -42,12 +42,7 @@ impl Samples for Ft8 {
 
             // println!("--> Symbol:  {}", self.symbol);
 
-            self.synth = Symbol::with_amplitude(
-                self.sample_rate,
-                self.carrier,
-                self.symbol as f32,
-                self.amplitude,
-            );
+            self.synth.set_symbol(self.symbol as f32);
         }
 
         self.sample -= 1;

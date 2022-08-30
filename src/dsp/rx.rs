@@ -45,16 +45,19 @@ impl Rx {
         let carrier = Frequency::Hertz(0.0);
 
         let aggregator_len = (sample_rate.value() / 6.25) as usize;
-        let buffer_len = (baseband_sample_rate.value() / 6.25) as usize;
-        let correlator = Correlator::new(buffer_len);
         let aggregator = Aggregator::new(aggregator_len);
+
+        let buffer_len = (baseband_sample_rate.value() / 6.25) as usize;
+        let ideal_buffer_len = 2_f32.powf((buffer_len as f32).log2().ceil()) as usize;
+
+        let correlator = Correlator::new(ideal_buffer_len);
 
         for symbol in 0..8 {
             let mut gen = Symbol::with_amplitude(baseband_sample_rate, carrier, symbol as f32, 1.0);
 
             // let len: usize =
             //     (sample_rate.value() / (carrier.value() + (symbol as f32) * 6.25)) as usize;
-            let syn: Vec<SampleType> = (0..buffer_len).into_iter().map(|_| gen.next()).collect();
+            let syn: Vec<SampleType> = (0..ideal_buffer_len).into_iter().map(|_| gen.next()).collect();
 
             symbols.push(correlator.prepare_rhs(&syn));
         }
