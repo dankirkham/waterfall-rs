@@ -17,6 +17,9 @@ impl<'a> Toolbar<'a> {
             ui.toggle_value(&mut self.show.scope, "🗠 Oscilloscope");
             ui.toggle_value(&mut self.show.messages, "📻 Messages");
             ui.toggle_value(&mut self.show.about, "❔ About");
+            ui.with_layout(egui::Layout::right_to_left(), |ui| {
+                global_dark_light_mode_switch(ui);
+            });
         });
     }
 }

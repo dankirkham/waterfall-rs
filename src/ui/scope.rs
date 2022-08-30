@@ -39,9 +39,21 @@ impl<'a> Scope<'a> {
 
         ui.horizontal(|ui| {
             ui.with_layout(egui::Layout::right_to_left(), |ui| {
+                let red = if ui.style().visuals.dark_mode {
+                    Color32::DARK_RED
+                } else {
+                    Color32::LIGHT_RED
+                };
+
+                let green = if ui.style().visuals.dark_mode {
+                    Color32::DARK_GREEN
+                } else {
+                    Color32::LIGHT_GREEN
+                };
+
                 if ui.add(match self.config.scope.mode {
                     ScopeMode::Stop => Button::new( "Stop")
-                        .fill(Color32::DARK_RED),
+                        .fill(red),
                     _ => Button::new( "Stop")
                 }).clicked() {
                     self.config.scope.mode = ScopeMode::Stop;
@@ -49,7 +61,7 @@ impl<'a> Scope<'a> {
 
                 if ui.add(match self.config.scope.mode {
                     ScopeMode::Single => Button::new( "Single")
-                        .fill(Color32::DARK_GREEN),
+                        .fill(green),
                     _ => Button::new( "Single")
                 }).clicked() {
                     self.config.scope.mode = ScopeMode::Single;
@@ -57,7 +69,7 @@ impl<'a> Scope<'a> {
 
                 if ui.add(match self.config.scope.mode {
                     ScopeMode::Run => Button::new( "Run")
-                        .fill(Color32::DARK_GREEN),
+                        .fill(green),
                     _ => Button::new( "Run")
                 }).clicked() {
                     self.config.scope.mode = ScopeMode::Run;
