@@ -142,8 +142,10 @@ impl eframe::App for App {
 
         let fft_depth = self.config.fft_depth;
         let audio_sample_rate = self.config.audio_sample_rate;
-        ctx.request_repaint_after(std::time::Duration::from_millis(
-            (fft_depth as f32 / audio_sample_rate as f32 * 1000.0) as u64,
-        ));
+        // ctx.request_repaint_after(std::time::Duration::from_millis(
+        //     (fft_depth as f32 / audio_sample_rate as f32 * 1000.0) as u64,
+        // ));
+
+        ctx.request_repaint_after(std::time::Duration::from_millis(1000 / 60));
     }
 }

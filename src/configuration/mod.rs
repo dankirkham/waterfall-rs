@@ -36,8 +36,8 @@ impl Default for Configuration {
     fn default() -> Self {
         Self {
             input_source: InputSource::Synth,
-            audio_sample_rate: 8000,
-            fft_depth: 1024,
+            audio_sample_rate: 48000,
+            fft_depth: 8192,
             min_db: -40.0,
             max_db: 0.0,
             trim_hz: 4000,

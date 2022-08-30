@@ -18,6 +18,7 @@ pub struct Rx {
     aggregator: Aggregator,
     sample_rate: Frequency,
     plot_sender: Sender<Vec<SampleType>>,
+    downsample_skip: usize,
 }
 
 impl Rx {
@@ -27,16 +28,29 @@ impl Rx {
     ) -> Self {
         let mut symbols: Vec<OperandData> = Vec::with_capacity(8);
 
-        let sample_rate = Frequency::Hertz(config.audio_sample_rate as f32);
-        // let carrier = Frequency::Hertz(100.0);
+        let sample_rate_raw = config.audio_sample_rate;
+        let sample_rate = Frequency::Hertz(sample_rate_raw as f32);
+        let baseband_sample_rate = match sample_rate_raw {
+            8000 => Frequency::Hertz(8000.0),
+            16000 => Frequency::Hertz(8000.0),
+            22050 => Frequency::Hertz(11025.0),
+            44100 => Frequency::Hertz(11025.0),
+            48000 => Frequency::Hertz(12000.0),
+            96000 => Frequency::Hertz(12000.0),
+            _ => sample_rate,
+        };
+
+        let downsample_skip: usize = sample_rate_raw / (baseband_sample_rate.value() as usize);
+
         let carrier = Frequency::Hertz(0.0);
 
-        let buffer_len = (sample_rate.value() / 6.25) as usize;
+        let aggregator_len = (sample_rate.value() / 6.25) as usize;
+        let buffer_len = (baseband_sample_rate.value() / 6.25) as usize;
         let correlator = Correlator::new(buffer_len);
-        let aggregator = Aggregator::new(buffer_len);
+        let aggregator = Aggregator::new(aggregator_len);
 
         for symbol in 0..8 {
-            let mut gen = Symbol::with_amplitude(sample_rate, carrier, symbol as f32, 1.0);
+            let mut gen = Symbol::with_amplitude(baseband_sample_rate, carrier, symbol as f32, 1.0);
 
             // let len: usize =
             //     (sample_rate.value() / (carrier.value() + (symbol as f32) * 6.25)) as usize;
@@ -50,6 +64,7 @@ impl Rx {
             aggregator,
             sample_rate,
             plot_sender,
+            downsample_skip,
         }
     }
 
@@ -96,7 +111,9 @@ impl Rx {
             let low_passed = mixed.map(|sample| lpf.next(sample));
 
             // Collect into signal
-            let signal: Vec<SampleType> = low_passed.collect();
+            let signal: Vec<SampleType> = low_passed
+                .step_by(self.downsample_skip)
+                .collect();
 
             if let Err(err) = self.plot_sender.try_send(signal.clone()) {
                 match err {
