@@ -36,8 +36,8 @@ impl Default for Configuration {
     fn default() -> Self {
         Self {
             input_source: InputSource::Synth,
-            audio_sample_rate: 44100,
-            fft_depth: 8192,
+            audio_sample_rate: 8000,
+            fft_depth: 1024,
             min_db: -40.0,
             max_db: 0.0,
             trim_hz: 4000,
@@ -51,19 +51,24 @@ impl Default for Configuration {
 
 impl Configuration {
     pub fn displayed_bandwidth(&self) -> f32 {
-        self.trim_hz as f32 / self.zoom
+        self.effective_trim_hz() as f32 / self.zoom
     }
 
     pub fn start_hz(&self) -> f32 {
-        ((self.trim_hz as f32) - self.displayed_bandwidth()) * self.scroll
+        ((self.effective_trim_hz() as f32) - self.displayed_bandwidth()) * self.scroll
     }
 
     pub fn bin_hz(&self) -> f32 {
         self.audio_sample_rate as f32 / self.fft_depth as f32
     }
 
+    /// We can't do better than Nyquist.
+    pub fn effective_trim_hz(&self) -> usize {
+        self.trim_hz.min(self.audio_sample_rate / 2)
+    }
+
     pub fn effective_len(&self) -> usize {
-        (self.trim_hz as f32 / self.bin_hz()) as usize
+        (self.effective_trim_hz() as f32 / self.bin_hz()) as usize
     }
 
     pub fn zoomed_length(&self) -> usize {

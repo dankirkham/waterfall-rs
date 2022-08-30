@@ -27,6 +27,9 @@ impl<'a> Settings<'a> {
             egui::ComboBox::from_label("Sample Rate")
                 .selected_text(format!("{:?}", self.config.audio_sample_rate))
                 .show_ui(ui, |ui| {
+                    ui.selectable_value(&mut self.config.audio_sample_rate, 8000, "8 kHz");
+                    ui.selectable_value(&mut self.config.audio_sample_rate, 16000, "16 kHz");
+                    ui.selectable_value(&mut self.config.audio_sample_rate, 22050, "22.05 kHz");
                     ui.selectable_value(&mut self.config.audio_sample_rate, 44100, "44.1 kHz");
                     ui.selectable_value(&mut self.config.audio_sample_rate, 48000, "48 kHz");
                     ui.selectable_value(&mut self.config.audio_sample_rate, 96000, "96 kHz");
