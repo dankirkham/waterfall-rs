@@ -47,7 +47,9 @@ impl Source for Synth {
 
             if new_samples > 0 {
                 let mut samples: Vec<SampleType> = Vec::with_capacity(new_samples);
-                (0..new_samples).into_iter().for_each(|_| samples.push(self.signal.next()));
+                (0..new_samples)
+                    .into_iter()
+                    .for_each(|_| samples.push(self.signal.next()));
 
                 self.sender.try_send(samples).unwrap();
             }

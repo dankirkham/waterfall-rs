@@ -3,8 +3,8 @@ mod tuner_settings;
 
 use crate::input::InputSource;
 use crate::units::Frequency;
-pub use tuner_settings::{DecoderType, TunerSettings};
 pub use scope_settings::{AxisMode, ScopeMode, ScopeSettings, TriggerMode, TriggerSettings};
+pub use tuner_settings::{DecoderType, TunerSettings};
 
 #[derive(Clone)]
 pub struct Configuration {

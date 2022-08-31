@@ -11,7 +11,7 @@ impl Aggregator {
     pub fn new(buffer_len: usize) -> Self {
         Self {
             buffer_len,
-            data: VecDeque::with_capacity(10 * buffer_len)
+            data: VecDeque::with_capacity(10 * buffer_len),
         }
     }
 

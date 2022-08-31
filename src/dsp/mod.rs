@@ -1,9 +1,9 @@
 mod aggregator;
 pub mod correlator;
+mod processor;
 pub mod rx;
 mod turbo;
-mod processor;
 pub mod waterfall_processor;
 
-pub use processor::Processor;
 pub use aggregator::Aggregator;
+pub use processor::Processor;

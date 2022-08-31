@@ -74,22 +74,19 @@ impl<'a> Settings<'a> {
             });
             egui::Grid::new("tuner_settings").show(ui, |ui| {
                 ui.add(
-                    egui::DragValue::new(&mut self.config.tuner.carrier)
-                        // .custom_formatter(|n, _| format!("{}", Frequency::Hertz(n)))
+                    egui::DragValue::new(&mut self.config.tuner.carrier), // .custom_formatter(|n, _| format!("{}", Frequency::Hertz(n)))
                 );
                 ui.label("Carrier");
                 ui.end_row();
 
                 ui.add(
-                    egui::DragValue::new(&mut self.config.tuner.lower)
-                        // .custom_formatter(|n, _| format!("{}", Frequency::Hertz(n)))
+                    egui::DragValue::new(&mut self.config.tuner.lower), // .custom_formatter(|n, _| format!("{}", Frequency::Hertz(n)))
                 );
                 ui.label("Bandpass Lower");
                 ui.end_row();
 
                 ui.add(
-                    egui::DragValue::new(&mut self.config.tuner.upper)
-                        // .custom_formatter(|n, _| format!("{}", Frequency::Hertz(n)))
+                    egui::DragValue::new(&mut self.config.tuner.upper), // .custom_formatter(|n, _| format!("{}", Frequency::Hertz(n)))
                 );
                 ui.label("Bandpass Upper");
                 ui.end_row();

@@ -119,9 +119,7 @@ impl Correlator {
 
         self.ifft.process(&mut r_complex);
 
-        let r_iter = r_complex
-            .into_iter()
-            .map(|c| c.re); // Use only real part
+        let r_iter = r_complex.into_iter().map(|c| c.re); // Use only real part
 
         let mut max = r_iter.fold(-f32::INFINITY, |a, b| a.max(b));
 

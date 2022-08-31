@@ -1,7 +1,7 @@
-use cpal::Stream;
 use cpal::traits::{DeviceTrait, HostTrait, StreamTrait};
-use tokio::sync::mpsc::Sender;
+use cpal::Stream;
 use tokio::sync::mpsc::error::TrySendError;
+use tokio::sync::mpsc::Sender;
 
 use crate::configuration::Configuration;
 use crate::filter::Filter;
@@ -84,8 +84,7 @@ impl Audio {
 }
 
 impl Source for Audio {
-    fn run(&mut self, _config: &Configuration) {
-    }
+    fn run(&mut self, _config: &Configuration) {}
 
     fn get_tx(&self) -> Sender<Vec<SampleType>> {
         self.sender.clone()

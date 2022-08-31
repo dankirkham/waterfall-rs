@@ -2,7 +2,7 @@ use crate::units::Frequency;
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum DecoderType {
-    Ft8
+    Ft8,
 }
 
 #[derive(Clone)]

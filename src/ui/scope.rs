@@ -1,5 +1,5 @@
-use egui::*;
 use egui::plot::{Line, Plot, Values};
+use egui::*;
 
 use crate::configuration::{AxisMode, Configuration, ScopeMode, TriggerMode, TriggerSettings};
 use crate::types::SampleType;
@@ -17,11 +17,11 @@ fn trigger_position(data: &[SampleType], settings: &TriggerSettings) -> Option<u
         TriggerMode::Rising => {
             let below = data.iter().position(lower)?;
             data[below..].iter().position(higher)
-        },
+        }
         TriggerMode::Falling => {
             let above = data.iter().position(higher)?;
             data[above..].iter().position(lower)
-        },
+        }
         TriggerMode::Auto => Some(0),
     }
 }
@@ -51,27 +51,33 @@ impl<'a> Scope<'a> {
                     Color32::LIGHT_GREEN
                 };
 
-                if ui.add(match self.config.scope.mode {
-                    ScopeMode::Stop => Button::new( "Stop")
-                        .fill(red),
-                    _ => Button::new( "Stop")
-                }).clicked() {
+                if ui
+                    .add(match self.config.scope.mode {
+                        ScopeMode::Stop => Button::new("Stop").fill(red),
+                        _ => Button::new("Stop"),
+                    })
+                    .clicked()
+                {
                     self.config.scope.mode = ScopeMode::Stop;
                 }
 
-                if ui.add(match self.config.scope.mode {
-                    ScopeMode::Single => Button::new( "Single")
-                        .fill(green),
-                    _ => Button::new( "Single")
-                }).clicked() {
+                if ui
+                    .add(match self.config.scope.mode {
+                        ScopeMode::Single => Button::new("Single").fill(green),
+                        _ => Button::new("Single"),
+                    })
+                    .clicked()
+                {
                     self.config.scope.mode = ScopeMode::Single;
                 }
 
-                if ui.add(match self.config.scope.mode {
-                    ScopeMode::Run => Button::new( "Run")
-                        .fill(green),
-                    _ => Button::new( "Run")
-                }).clicked() {
+                if ui
+                    .add(match self.config.scope.mode {
+                        ScopeMode::Run => Button::new("Run").fill(green),
+                        _ => Button::new("Run"),
+                    })
+                    .clicked()
+                {
                     self.config.scope.mode = ScopeMode::Run;
                 }
             });
@@ -106,21 +112,32 @@ impl<'a> Scope<'a> {
             egui::ComboBox::from_label("Triger Mode")
                 .selected_text(format!("{:?}", self.config.scope.trigger.mode))
                 .show_ui(ui, |ui| {
-                    ui.selectable_value(&mut self.config.scope.trigger.mode, TriggerMode::Auto, "Auto");
-                    ui.selectable_value(&mut self.config.scope.trigger.mode, TriggerMode::Rising, "Rising");
-                    ui.selectable_value(&mut self.config.scope.trigger.mode, TriggerMode::Falling, "Falling");
+                    ui.selectable_value(
+                        &mut self.config.scope.trigger.mode,
+                        TriggerMode::Auto,
+                        "Auto",
+                    );
+                    ui.selectable_value(
+                        &mut self.config.scope.trigger.mode,
+                        TriggerMode::Rising,
+                        "Rising",
+                    );
+                    ui.selectable_value(
+                        &mut self.config.scope.trigger.mode,
+                        TriggerMode::Falling,
+                        "Falling",
+                    );
                 });
-                if self.config.scope.trigger.mode != TriggerMode::Auto {
-                    egui::Grid::new("trigger-level").show(ui, |ui| {
-                        ui.add(
-                            egui::DragValue::new(&mut self.config.scope.trigger.level)
-                                .speed(0.00000001)
-                                // .custom_formatter(|n, _| format!("{}", Frequency::Hertz(n)))
-                        );
-                        ui.label("Level");
-                        ui.end_row();
-                    });
-                }
+            if self.config.scope.trigger.mode != TriggerMode::Auto {
+                egui::Grid::new("trigger-level").show(ui, |ui| {
+                    ui.add(
+                        egui::DragValue::new(&mut self.config.scope.trigger.level)
+                            .speed(0.00000001), // .custom_formatter(|n, _| format!("{}", Frequency::Hertz(n)))
+                    );
+                    ui.label("Level");
+                    ui.end_row();
+                });
+            }
         });
     }
 }

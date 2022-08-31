@@ -24,11 +24,7 @@ impl Processor {
         let rx = Rx::new(plot_sender, config);
         let wp = WaterfallProcessor::new(sender, config);
 
-        Self {
-            receiver,
-            rx,
-            wp,
-        }
+        Self { receiver, rx, wp }
     }
 
     pub fn run(&mut self, config: &Configuration, stats: &mut Statistics) {

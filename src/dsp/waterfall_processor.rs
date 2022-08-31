@@ -5,14 +5,14 @@ use egui::{Color32, ColorImage};
 use realfft::RealFftPlanner;
 use realfft::RealToComplex;
 use rustfft::num_complex::Complex;
-use tokio::sync::mpsc::Sender;
 use tokio::sync::mpsc::error::TrySendError;
+use tokio::sync::mpsc::Sender;
 use wasm_timer::Instant;
 
 use crate::configuration::Configuration;
 use crate::dsp::aggregator::Aggregator;
 use crate::statistics::{MovingAverage, Statistics};
-use crate::types::{PLOT_DEPTH, SampleType};
+use crate::types::{SampleType, PLOT_DEPTH};
 
 use super::turbo::get_color;
 
@@ -28,10 +28,7 @@ pub struct WaterfallProcessor {
 }
 
 impl WaterfallProcessor {
-    pub fn new(
-        sender: Sender<ColorImage>,
-        config: &Configuration,
-    ) -> Self {
+    pub fn new(sender: Sender<ColorImage>, config: &Configuration) -> Self {
         let mut planner = RealFftPlanner::<f32>::new();
         let fft_depth = config.fft_depth;
         let scroll = config.scroll;
@@ -50,7 +47,12 @@ impl WaterfallProcessor {
         }
     }
 
-    pub fn run(&mut self, new_samples: Vec<SampleType>, config: &Configuration, stats: &mut Statistics) {
+    pub fn run(
+        &mut self,
+        new_samples: Vec<SampleType>,
+        config: &Configuration,
+        stats: &mut Statistics,
+    ) {
         if self.fft_depth != config.fft_depth {
             self.fft_depth = config.fft_depth;
             let mut planner = RealFftPlanner::<f32>::new();
@@ -64,11 +66,13 @@ impl WaterfallProcessor {
             let permit = match self.sender.try_reserve() {
                 Err(err) => {
                     match err {
-                        TrySendError::Full(_) => println!("Waterfall UI is falling behind, dropping samples."),
+                        TrySendError::Full(_) => {
+                            println!("Waterfall UI is falling behind, dropping samples.")
+                        }
                         TrySendError::Closed(_) => (),
                     }
                     continue;
-                },
+                }
                 Ok(permit) => permit,
             };
 
@@ -78,21 +82,22 @@ impl WaterfallProcessor {
                 if image.size[0] != config.effective_len() {
                     let image =
                         ColorImage::new([config.effective_len(), PLOT_DEPTH], Color32::default());
-                    self.pixels = VecDeque::from(vec![Color32::BLACK; config.effective_len() * PLOT_DEPTH]);
+                    self.pixels =
+                        VecDeque::from(vec![Color32::BLACK; config.effective_len() * PLOT_DEPTH]);
                     self.scroll = config.scroll;
                     self.image = Some(image);
                 }
             } else {
-                let image = ColorImage::new([config.effective_len(), PLOT_DEPTH], Color32::default());
-                self.pixels = VecDeque::from(vec![Color32::BLACK; config.effective_len() * PLOT_DEPTH]);
+                let image =
+                    ColorImage::new([config.effective_len(), PLOT_DEPTH], Color32::default());
+                self.pixels =
+                    VecDeque::from(vec![Color32::BLACK; config.effective_len() * PLOT_DEPTH]);
                 self.scroll = config.scroll;
                 self.image = Some(image);
             }
 
             let mut spectrum = self.fft.make_output_vec();
-            self.fft
-                .process(&mut samples, &mut spectrum)
-                .unwrap();
+            self.fft.process(&mut samples, &mut spectrum).unwrap();
 
             if config.effective_len() < self.fft_depth {
                 spectrum.resize(config.effective_len(), Complex::default());
