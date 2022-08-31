@@ -2,11 +2,13 @@ use std::cmp::Ordering;
 
 use tokio::sync::mpsc::Sender;
 use tokio::sync::mpsc::error::TrySendError;
+use wasm_timer::Instant;
 
 use crate::configuration::Configuration;
 use crate::dsp::aggregator::Aggregator;
 use crate::dsp::correlator::{Correlator, OperandData};
 use crate::filter::{BandPassFilter, Filter, LowPassFilter};
+use crate::statistics::{MovingAverage, Statistics};
 use crate::synth::Symbol;
 use crate::synth::{Samples, Sine};
 use crate::types::SampleType;
@@ -71,7 +73,7 @@ impl Rx {
         }
     }
 
-    pub fn run(&mut self, new_samples: Vec<SampleType>, config: &Configuration) {
+    pub fn run(&mut self, new_samples: Vec<SampleType>, config: &Configuration, stats: &mut Statistics) {
         let sample_rate = Frequency::Hertz(config.audio_sample_rate as f32);
         if sample_rate.value() != self.sample_rate.value() {
             *self = Self::new(self.plot_sender.clone(), config);
@@ -80,6 +82,8 @@ impl Rx {
         self.aggregator.aggregate(new_samples);
 
         while let Some(samples) = self.aggregator.get_slice() {
+            let now = Instant::now();
+
             // Bandpass
             let mut bpf1 = BandPassFilter::from_frequency(
                 config.tuner.lower_absolute(), // Low
@@ -136,7 +140,9 @@ impl Rx {
                 .map(|(index, _)| index)
                 .unwrap();
 
-            println!("Decoded: {}", symbol);
+            let elapsed = now.elapsed();
+            stats.rx.push(elapsed);
+            // println!("Decoded: {}", symbol);
         }
     }
 }

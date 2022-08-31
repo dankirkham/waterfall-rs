@@ -7,9 +7,11 @@ use realfft::RealToComplex;
 use rustfft::num_complex::Complex;
 use tokio::sync::mpsc::Sender;
 use tokio::sync::mpsc::error::TrySendError;
+use wasm_timer::Instant;
 
 use crate::configuration::Configuration;
 use crate::dsp::aggregator::Aggregator;
+use crate::statistics::{MovingAverage, Statistics};
 use crate::types::{PLOT_DEPTH, SampleType};
 
 use super::turbo::get_color;
@@ -48,7 +50,7 @@ impl WaterfallProcessor {
         }
     }
 
-    pub fn run(&mut self, new_samples: Vec<SampleType>, config: &Configuration) {
+    pub fn run(&mut self, new_samples: Vec<SampleType>, config: &Configuration, stats: &mut Statistics) {
         if self.fft_depth != config.fft_depth {
             self.fft_depth = config.fft_depth;
             let mut planner = RealFftPlanner::<f32>::new();
@@ -69,6 +71,8 @@ impl WaterfallProcessor {
                 },
                 Ok(permit) => permit,
             };
+
+            let now = Instant::now();
 
             if let Some(image) = &self.image {
                 if image.size[0] != config.effective_len() {
@@ -130,6 +134,8 @@ impl WaterfallProcessor {
             };
 
             permit.send(cropped_image);
+            let elapsed = now.elapsed();
+            stats.waterfall.push(elapsed);
         }
     }
 }

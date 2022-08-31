@@ -2,6 +2,7 @@ use egui::ColorImage;
 use tokio::sync::mpsc::{Receiver, Sender};
 
 use crate::configuration::Configuration;
+use crate::statistics::Statistics;
 use crate::types::SampleType;
 
 use super::rx::Rx;
@@ -30,13 +31,13 @@ impl Processor {
         }
     }
 
-    pub fn run(&mut self, config: &Configuration) {
+    pub fn run(&mut self, config: &Configuration, stats: &mut Statistics) {
         while let Ok(samples) = self.receiver.try_recv() {
             // use std::time::Instant;
             // let now = Instant::now();
 
-            self.rx.run(samples.clone(), config);
-            self.wp.run(samples, config);
+            self.rx.run(samples.clone(), config, stats);
+            self.wp.run(samples, config, stats);
 
             // let elapsed = now.elapsed();
             // println!("Elapsed: {:.2?}", elapsed);

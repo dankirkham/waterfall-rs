@@ -1,10 +1,14 @@
+use std::fmt;
+
 use egui::*;
 use egui_extras::image::RetainedImage;
 use tokio::sync::mpsc;
+use wasm_timer::Instant;
 
 use crate::configuration::Configuration;
 use crate::dsp::Processor;
 use crate::input::{Audio, InputSource, Source, Synth};
+use crate::statistics::{MovingAverage, Statistics};
 use crate::types::SampleType;
 use crate::ui::{About, Messages, Scope, Settings, Toolbar, WaterfallPlot, Windows};
 
@@ -23,6 +27,8 @@ pub struct App {
     input_source: InputSource,
 
     show: Windows,
+
+    stats: Statistics,
 }
 
 impl App {
@@ -52,6 +58,8 @@ impl App {
             input_source,
 
             show: Windows::default(),
+
+            stats: Statistics::default(),
         }
     }
 
@@ -65,6 +73,8 @@ impl App {
 
 impl eframe::App for App {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
+        let now = Instant::now();
+
         if self.input_source != self.config.input_source {
             self.input_source = self.config.input_source;
             let tx = self.source.get_tx();
@@ -72,7 +82,7 @@ impl eframe::App for App {
         }
 
         self.source.run(&self.config);
-        self.processor.run(&self.config);
+        self.processor.run(&self.config, &mut self.stats);
 
         // egui::TopBottomPanel::top("top_panel").show(ctx, |ui| {
         //     egui::menu::bar(ui, |ui| {
@@ -127,6 +137,20 @@ impl eframe::App for App {
                 messages.ui(ui);
             });
 
+        egui::TopBottomPanel::bottom("status").show(ctx, |ui| {
+            ui.horizontal(|ui| {
+                if let Some(avg) = self.stats.rx.avg() {
+                    ui.label(format!("RX: {:?}", avg));
+                }
+                if let Some(avg) = self.stats.waterfall.avg() {
+                    ui.label(format!("Waterfall: {:?}", avg));
+                }
+                // if let Some(avg) = self.stats.render.avg() {
+                //     ui.label(format!("Render: {:?}", avg));
+                // }
+            });
+        });
+
         egui::CentralPanel::default()
             .frame(Frame::none().fill(ctx.style().visuals.faint_bg_color))
             .show(ctx, |ui| {
@@ -147,5 +171,8 @@ impl eframe::App for App {
         // ));
 
         ctx.request_repaint_after(std::time::Duration::from_millis(1000 / 60));
+
+        let elapsed = now.elapsed();
+        self.stats.render.push(elapsed);
     }
 }
