@@ -140,14 +140,14 @@ impl eframe::App for App {
         egui::TopBottomPanel::bottom("status").show(ctx, |ui| {
             ui.horizontal(|ui| {
                 if let Some(avg) = self.stats.rx.avg() {
-                    ui.label(format!("RX: {:?}", avg));
+                    ui.label(format!("RX: {}", avg));
                 }
                 if let Some(avg) = self.stats.waterfall.avg() {
-                    ui.label(format!("Waterfall: {:?}", avg));
+                    ui.label(format!("Waterfall: {}", avg));
                 }
-                // if let Some(avg) = self.stats.render.avg() {
-                //     ui.label(format!("Render: {:?}", avg));
-                // }
+                if let Some(avg) = self.stats.render.avg() {
+                    ui.label(format!("Render: {}", avg));
+                }
             });
         });
 

@@ -1,6 +1,8 @@
 use std::collections::VecDeque;
 use std::time::Duration;
 
+use crate::units::Time;
+
 #[derive(Default)]
 pub struct Statistics {
     pub rx: MovingAverage,
@@ -29,13 +31,13 @@ impl MovingAverage {
         self.times.push_back(duration);
     }
 
-    pub fn avg(&self) -> Option<Duration> {
+    pub fn avg(&self) -> Option<Time> {
         if self.times.len() == 0 {
             return None;
         }
 
         let sum: Duration = self.times.iter().sum();
         let avg = sum / self.times.len().try_into().unwrap();
-        Some(avg)
+        Some(avg.into())
     }
 }
