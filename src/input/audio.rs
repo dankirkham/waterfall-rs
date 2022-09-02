@@ -48,25 +48,126 @@ impl Audio {
         // let mut ft8 = Ft8::new(self.sample_rate, Frequency::Hertz(100.0));
 
         let stream_sender = sender.clone();
-        let stream = match config.sample_format() {
-            cpal::SampleFormat::F32 => device.build_input_stream(
-                &config.into(),
-                move |data: &[f32], _: &_| {
-                    let samples = data.iter().step_by(2).copied();
+        let stream = match config.channels() {
+            1 => match config.sample_format() {
+                cpal::SampleFormat::F32 => device.build_input_stream(
+                    &config.into(),
+                    move |data: &[f32], _: &_| {
+                        let samples = data.iter().copied();
 
-                    let filtered: Vec<f32> = samples.map(|sample| filter.next(sample)).collect();
-                    // let filtered: Vec<f32> = samples.map(|sample| ft8.next()).collect();
+                        let filtered: Vec<f32> = samples.map(|sample| filter.next(sample)).collect();
+                        // let filtered: Vec<f32> = samples.map(|sample| ft8.next()).collect();
 
-                    if let Err(err) = stream_sender.try_send(filtered) {
-                        match err {
-                            TrySendError::Full(_) => println!("Waterfall processor falling behind"),
-                            TrySendError::Closed(_) => (),
+                        if let Err(err) = stream_sender.try_send(filtered) {
+                            match err {
+                                TrySendError::Full(_) => println!("Waterfall processor falling behind"),
+                                TrySendError::Closed(_) => (),
+                            }
                         }
-                    }
-                },
-                err_fn,
-            ),
-            _ => panic!("Sample format not supported"),
+                    },
+                    err_fn,
+                ),
+                cpal::SampleFormat::I16 => device.build_input_stream(
+                    &config.into(),
+                    move |data: &[i16], _: &_| {
+                        let samples = data
+                            .iter()
+                            .map(|&v| v as f32)
+                            .map(|v| v / 32768.0);
+
+                        let filtered: Vec<f32> = samples.map(|sample| filter.next(sample)).collect();
+
+                        if let Err(err) = stream_sender.try_send(filtered) {
+                            match err {
+                                TrySendError::Full(_) => println!("Waterfall processor falling behind"),
+                                TrySendError::Closed(_) => (),
+                            }
+                        }
+                    },
+                    err_fn,
+                ),
+                cpal::SampleFormat::U16 => device.build_input_stream(
+                    &config.into(),
+                    move |data: &[u16], _: &_| {
+                        let samples = data
+                            .iter()
+                            .map(|&v| v as f32)
+                            .map(|v| v / 32768.0)
+                            .map(|v| v - 1.0);
+
+                        let filtered: Vec<f32> = samples.map(|sample| filter.next(sample)).collect();
+
+                        if let Err(err) = stream_sender.try_send(filtered) {
+                            match err {
+                                TrySendError::Full(_) => println!("Waterfall processor falling behind"),
+                                TrySendError::Closed(_) => (),
+                            }
+                        }
+                    },
+                    err_fn,
+                ),
+            },
+            2 => match config.sample_format() {
+                cpal::SampleFormat::F32 => device.build_input_stream(
+                    &config.into(),
+                    move |data: &[f32], _: &_| {
+                        let samples = data.iter().step_by(2).copied();
+
+                        let filtered: Vec<f32> = samples.map(|sample| filter.next(sample)).collect();
+                        // let filtered: Vec<f32> = samples.map(|sample| ft8.next()).collect();
+
+                        if let Err(err) = stream_sender.try_send(filtered) {
+                            match err {
+                                TrySendError::Full(_) => println!("Waterfall processor falling behind"),
+                                TrySendError::Closed(_) => (),
+                            }
+                        }
+                    },
+                    err_fn,
+                ),
+                cpal::SampleFormat::I16 => device.build_input_stream(
+                    &config.into(),
+                    move |data: &[i16], _: &_| {
+                        let samples = data
+                            .iter()
+                            .step_by(2)
+                            .map(|&v| v as f32)
+                            .map(|v| v / 32768.0);
+
+                        let filtered: Vec<f32> = samples.map(|sample| filter.next(sample)).collect();
+
+                        if let Err(err) = stream_sender.try_send(filtered) {
+                            match err {
+                                TrySendError::Full(_) => println!("Waterfall processor falling behind"),
+                                TrySendError::Closed(_) => (),
+                            }
+                        }
+                    },
+                    err_fn,
+                ),
+                cpal::SampleFormat::U16 => device.build_input_stream(
+                    &config.into(),
+                    move |data: &[u16], _: &_| {
+                        let samples = data
+                            .iter()
+                            .step_by(2)
+                            .map(|&v| v as f32)
+                            .map(|v| v / 32768.0)
+                            .map(|v| v - 1.0);
+
+                        let filtered: Vec<f32> = samples.map(|sample| filter.next(sample)).collect();
+
+                        if let Err(err) = stream_sender.try_send(filtered) {
+                            match err {
+                                TrySendError::Full(_) => println!("Waterfall processor falling behind"),
+                                TrySendError::Closed(_) => (),
+                            }
+                        }
+                    },
+                    err_fn,
+                ),
+            },
+            _ => panic!("Only supports 1 or 2 channels"),
         }
         .expect("Unable to build stream");
 

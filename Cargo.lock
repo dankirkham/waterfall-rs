@@ -1767,7 +1767,7 @@ version = "3.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a83b876fe55da7e1bf5deeacb93d6411edf81eba0e1a497e79c067734729053a"
 dependencies = [
- "rustfft",
+ "rustfft 6.0.1 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
@@ -1837,6 +1837,19 @@ name = "rustfft"
 version = "6.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b1d089e5c57521629a59f5f39bca7434849ff89bd6873b521afe389c1c602543"
+dependencies = [
+ "num-complex",
+ "num-integer",
+ "num-traits",
+ "primal-check",
+ "strength_reduce",
+ "transpose",
+]
+
+[[package]]
+name = "rustfft"
+version = "6.0.1"
+source = "git+https://github.com/ejmahler/RustFFT?rev=3dd012c0#3dd012c0e7a6b4335158c5158d78c74997a41d89"
 dependencies = [
  "num-complex",
  "num-integer",
@@ -2370,7 +2383,7 @@ dependencies = [
  "getrandom",
  "rand",
  "realfft",
- "rustfft",
+ "rustfft 6.0.1 (git+https://github.com/ejmahler/RustFFT?rev=3dd012c0)",
  "tokio",
  "tracing-wasm",
  "wasm-timer",
