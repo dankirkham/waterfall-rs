@@ -1,4 +1,5 @@
 mod about;
+mod bump;
 mod filter_cutoff;
 mod messages;
 mod scope;

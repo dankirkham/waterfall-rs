@@ -3,6 +3,7 @@ use egui::*;
 use crate::configuration::Configuration;
 use crate::configuration::DecoderType;
 use crate::input::InputSource;
+use crate::ui::bump::Bump;
 
 pub struct Settings<'a> {
     config: &'a mut Configuration,
@@ -85,25 +86,10 @@ impl<'a> Settings<'a> {
             ui.vertical_centered(|ui| {
                 ui.heading("Tuner");
             });
-            egui::Grid::new("tuner_settings").show(ui, |ui| {
-                ui.add(
-                    egui::DragValue::new(&mut self.config.tuner.carrier), // .custom_formatter(|n, _| format!("{}", Frequency::Hertz(n)))
-                );
-                ui.label("Carrier");
-                ui.end_row();
+            Bump::new(&mut self.config.tuner.carrier, "Carrier".to_string()).ui(ui);
+            Bump::new(&mut self.config.tuner.upper, "Bandpass Upper".to_string()).ui(ui);
+            Bump::new(&mut self.config.tuner.lower, "Bandpass Lower".to_string()).ui(ui);
 
-                ui.add(
-                    egui::DragValue::new(&mut self.config.tuner.lower), // .custom_formatter(|n, _| format!("{}", Frequency::Hertz(n)))
-                );
-                ui.label("Bandpass Lower");
-                ui.end_row();
-
-                ui.add(
-                    egui::DragValue::new(&mut self.config.tuner.upper), // .custom_formatter(|n, _| format!("{}", Frequency::Hertz(n)))
-                );
-                ui.label("Bandpass Upper");
-                ui.end_row();
-            });
             egui::ComboBox::from_label("Decoder")
                 .selected_text(format!("{:?}", self.config.tuner.decoder))
                 .show_ui(ui, |ui| {

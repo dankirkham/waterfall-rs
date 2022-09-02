@@ -146,7 +146,7 @@ impl<'a> Carrier<'a> {
     }
 
     pub fn ui(&mut self, ui: &mut egui::Ui) {
-        let width = 30.0;
+        let width = 200.0;
         let rect = ui.max_rect();
 
         let x = self.config.freq_to_zoom_interval(Frequency::Hertz(*self.f));
@@ -166,6 +166,8 @@ impl<'a> Carrier<'a> {
             } else {
                 ui.style().visuals.text_color()
             };
+
+            // painter.rect_filled(rect, Rounding::none(), Color32::RED);
 
             let stroke = Stroke { width: 3.0, color };
             painter.line_segment([rect.center_top(), rect.center_bottom()], stroke);
