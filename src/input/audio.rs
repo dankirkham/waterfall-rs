@@ -12,22 +12,39 @@ use crate::units::Frequency;
 
 pub struct Audio {
     sender: Sender<Vec<SampleType>>,
-    sample_rate: Frequency,
     stream: Stream,
+
+    sample_rate: usize,
+    device_name: String,
 }
 
 impl Audio {
-    pub fn new(sender: Sender<Vec<SampleType>>, config: &Configuration) -> Self {
-        let sample_rate = Frequency::Hertz(config.audio_sample_rate as f32);
-
+    pub fn get_devices() -> Vec<String> {
         let host = cpal::default_host();
-
         host.input_devices()
             .unwrap()
             .into_iter()
-            .for_each(|d| println!("{}", d.name().unwrap()));
+            .map(|d| d.name().unwrap())
+            .collect()
+    }
 
-        let device = host.default_input_device().expect("No input device");
+    pub fn new(sender: Sender<Vec<SampleType>>, config: &Configuration) -> Self {
+        let sample_rate = config.audio_sample_rate;
+        let sample_rate_f = Frequency::Hertz(sample_rate as f32);
+
+        let host = cpal::default_host();
+
+        let device_name = config.input_device.to_string();
+        let device = if device_name == "Default" {
+            host.default_input_device().expect("No input device")
+        } else {
+            host.input_devices()
+                .unwrap()
+                .into_iter()
+                .find(|d| d.name().unwrap() == device_name)
+                .unwrap()
+        };
+
         println!("Using device {}", device.name().unwrap());
 
         let mut supported_configs_range = device
@@ -43,9 +60,7 @@ impl Audio {
             // react to errors here.
         };
 
-        let mut filter = HighPassFilter::from_frequency(Frequency::Hertz(300.0), sample_rate);
-
-        // let mut ft8 = Ft8::new(self.sample_rate, Frequency::Hertz(100.0));
+        let mut filter = HighPassFilter::from_frequency(Frequency::Hertz(300.0), sample_rate_f);
 
         let stream_sender = sender.clone();
         let stream = match config.channels() {
@@ -180,12 +195,17 @@ impl Audio {
             // config,
             sample_rate,
             stream,
+            device_name,
         }
     }
 }
 
 impl Source for Audio {
-    fn run(&mut self, _config: &Configuration) {}
+    fn run(&mut self, config: &Configuration) {
+        if config.audio_sample_rate != self.sample_rate || config.input_device != self.device_name {
+            *self = Audio::new(self.sender.clone(), config);
+        }
+    }
 
     fn get_tx(&self) -> Sender<Vec<SampleType>> {
         self.sender.clone()

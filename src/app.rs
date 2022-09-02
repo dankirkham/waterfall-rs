@@ -29,6 +29,8 @@ pub struct App {
     show: Windows,
 
     stats: Statistics,
+
+    input_devices: Vec<String>,
 }
 
 impl App {
@@ -43,6 +45,8 @@ impl App {
 
         let input_source = config.input_source;
         let source = Self::create_source(&config, sample_tx);
+
+        let input_devices = Audio::get_devices();
 
         Self {
             image_rx,
@@ -60,6 +64,8 @@ impl App {
             show: Windows::default(),
 
             stats: Statistics::default(),
+
+            input_devices,
         }
     }
 
@@ -112,7 +118,7 @@ impl eframe::App for App {
         egui::Window::new("🔧 Settings")
             .open(&mut self.show.settings)
             .show(ctx, |ui| {
-                let mut settings = Settings::new(&mut self.config);
+                let mut settings = Settings::new(&mut self.config, &self.input_devices);
                 settings.ui(ui);
             });
 

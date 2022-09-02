@@ -6,11 +6,12 @@ use crate::input::InputSource;
 
 pub struct Settings<'a> {
     config: &'a mut Configuration,
+    input_devices: &'a Vec<String>,
 }
 
 impl<'a> Settings<'a> {
-    pub fn new(config: &'a mut Configuration) -> Self {
-        Self { config }
+    pub fn new(config: &'a mut Configuration, input_devices: &'a Vec<String>) -> Self {
+        Self { config, input_devices }
     }
 
     pub fn ui(&mut self, ui: &mut egui::Ui) {
@@ -24,6 +25,18 @@ impl<'a> Settings<'a> {
                     ui.selectable_value(&mut self.config.input_source, InputSource::Audio, "Audio");
                     ui.selectable_value(&mut self.config.input_source, InputSource::Synth, "Synth");
                 });
+
+            if self.config.input_source == InputSource::Audio {
+                egui::ComboBox::from_label("Device")
+                    .selected_text(format!("{:?}", self.config.input_device))
+                    .show_ui(ui, |ui| {
+                        ui.selectable_value(&mut self.config.input_device, "Default".to_owned(), "Default");
+                        self.input_devices.iter().for_each(|name| {
+                            ui.selectable_value(&mut self.config.input_device, name.to_string(), name);
+                        });
+                    });
+            }
+
             egui::ComboBox::from_label("Sample Rate")
                 .selected_text(format!("{:?}", self.config.audio_sample_rate))
                 .show_ui(ui, |ui| {

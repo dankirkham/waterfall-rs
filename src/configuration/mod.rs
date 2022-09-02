@@ -9,6 +9,7 @@ pub use tuner_settings::{DecoderType, TunerSettings};
 #[derive(Clone)]
 pub struct Configuration {
     pub input_source: InputSource,
+    pub input_device: String,
     pub audio_sample_rate: usize,
     pub fft_depth: usize,
     pub min_db: f32,
@@ -36,6 +37,7 @@ impl Default for Configuration {
     fn default() -> Self {
         Self {
             input_source: InputSource::Synth,
+            input_device: "Default".to_owned(),
             audio_sample_rate: 48000,
             fft_depth: 8192,
             min_db: -40.0,
