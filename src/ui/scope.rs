@@ -89,7 +89,7 @@ impl<'a> Scope<'a> {
             .center_y_axis(true)
             // .include_y(1.0)
             // .include_y(-1.0)
-            .include_x(450.0)
+            // .include_x(450.0)
             .height(300.0)
             // .width(400.0)
             .show(ui, |plot_ui| plot_ui.line(line));

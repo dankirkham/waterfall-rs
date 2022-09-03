@@ -13,11 +13,13 @@ mod tests {
 
     use waterfall_rs::configuration::Configuration;
     use waterfall_rs::dsp::waterfall_processor::WaterfallProcessor;
+    use waterfall_rs::statistics::Statistics;
     use waterfall_rs::types::SampleType;
 
     #[bench]
     fn bench_waterfall_processor(b: &mut Bencher) {
         let config = Configuration::default();
+        let mut statistics = Statistics::default();
         let (image_tx, _image_rx) = mpsc::channel::<ColorImage>(1);
         let mut wp = WaterfallProcessor::new(image_tx, &config);
 
@@ -30,7 +32,7 @@ mod tests {
 
         b.iter(|| {
             // black_box(x.powf(y).powf(x));
-            wp.run(signal.clone(), &config);
+            wp.run(signal.clone(), &config, &mut statistics);
         });
     }
 }

@@ -5,6 +5,7 @@ use tokio::sync::mpsc::Sender;
 use wasm_timer::Instant;
 
 use crate::configuration::Configuration;
+use crate::dsp::ft8_rx::{Ft8Rx, Symbol as Ft8Symbol};
 use crate::dsp::aggregator::Aggregator;
 use crate::dsp::correlator::{Correlator, OperandData};
 use crate::filter::{BandPassFilter, Filter, LowPassFilter};
@@ -21,21 +22,24 @@ pub struct Rx {
     sample_rate: Frequency,
     plot_sender: Sender<Vec<SampleType>>,
     downsample_skip: usize,
+    ft8_rx: Ft8Rx,
 }
 
 impl Rx {
     pub fn new(plot_sender: Sender<Vec<SampleType>>, config: &Configuration) -> Self {
         let mut symbols: Vec<OperandData> = Vec::with_capacity(8);
 
+        let ft8_rx = Ft8Rx::default();
+
         let sample_rate_raw = config.audio_sample_rate;
         let sample_rate = Frequency::Hertz(sample_rate_raw as f32);
         let baseband_sample_rate = match sample_rate_raw {
-            8000 => Frequency::Hertz(8000.0),
-            16000 => Frequency::Hertz(8000.0),
-            22050 => Frequency::Hertz(11025.0),
-            44100 => Frequency::Hertz(11025.0),
-            48000 => Frequency::Hertz(12000.0),
-            96000 => Frequency::Hertz(12000.0),
+            8000 => Frequency::Hertz(100.0),
+            16000 => Frequency::Hertz(100.0),
+            22050 => Frequency::Hertz(105.0),
+            44100 => Frequency::Hertz(100.0),
+            48000 => Frequency::Hertz(100.0),
+            96000 => Frequency::Hertz(100.0),
             _ => sample_rate,
         };
 
@@ -70,6 +74,7 @@ impl Rx {
             sample_rate,
             plot_sender,
             downsample_skip,
+            ft8_rx,
         }
     }
 
@@ -145,7 +150,12 @@ impl Rx {
 
             let elapsed = now.elapsed();
             stats.rx.push(elapsed);
-            // println!("Decoded: {}", symbol);
+
+            println!("Decoded: {}", symbol);
+            let ft8_sym = Ft8Symbol::from(symbol);
+            if let Some(message) = self.ft8_rx.next(ft8_sym) {
+                println!("An FT8 message was received!");
+            }
         }
     }
 }

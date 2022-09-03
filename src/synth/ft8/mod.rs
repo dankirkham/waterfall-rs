@@ -1,3 +1,4 @@
+mod message;
 mod signal;
 mod symbol;
 
