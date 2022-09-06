@@ -1,5 +1,5 @@
 pub fn sync_sequence() -> Vec<u8> {
-    vec![3, 1, 4, 0, 5, 6, 2]
+    vec![3, 1, 4, 0, 6, 5, 2]
 }
 
 #[derive(Default)]

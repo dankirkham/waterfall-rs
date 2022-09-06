@@ -19,6 +19,7 @@ rand = "0.8.5"
 realfft = "3.0.0"
 # rustfft = "6.0.1"
 rustfft = { git = "https://github.com/ejmahler/RustFFT", rev = "3dd012c0", feature = "neon-nightly" }
+statrs = "0.16.0"
 #tokio = { version = "1.20.1", features = ["full"] }
 tokio = { version = "1.20.1", features = ["sync"] }
 wasm-timer = "0.2.5"

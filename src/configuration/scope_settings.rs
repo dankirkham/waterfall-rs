@@ -26,7 +26,7 @@ pub struct TriggerSettings {
 impl Default for TriggerSettings {
     fn default() -> Self {
         Self {
-            mode: TriggerMode::Rising,
+            mode: TriggerMode::Auto,
             level: 0.0,
         }
     }
