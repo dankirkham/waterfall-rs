@@ -10,7 +10,7 @@ use crate::dsp::aggregator::Aggregator;
 use crate::dsp::correlator::{Correlator, OperandData};
 use crate::filter::{BandPassFilter, Filter, LowPassFilter};
 use crate::statistics::{MovingAverage, Statistics};
-use crate::synth::Symbol;
+use crate::synth::ft8::SingleSymbol;
 use crate::synth::{Samples, Sine};
 use crate::types::SampleType;
 use crate::units::Frequency;
@@ -48,7 +48,10 @@ impl Rx {
         let carrier = Frequency::Hertz(0.0);
 
         let aggregator_len = (sample_rate.value() / 6.25) as usize;
-        let aggregator = Aggregator::new(aggregator_len);
+        let mut aggregator = Aggregator::new(aggregator_len);
+
+        // Fake the sync until we actually implement synchronization
+        aggregator.aggregate(vec![0.0; aggregator_len / 2]);
 
         let buffer_len = (baseband_sample_rate.value() / 6.25) as usize;
         let ideal_buffer_len = 2_f32.powf((buffer_len as f32).log2().ceil()) as usize;
@@ -56,7 +59,7 @@ impl Rx {
         let correlator = Correlator::new(ideal_buffer_len);
 
         for symbol in 0..8 {
-            let mut gen = Symbol::with_amplitude(baseband_sample_rate, carrier, symbol as f32, 1.0);
+            let mut gen = SingleSymbol::with_amplitude(baseband_sample_rate, carrier, symbol as f32, 1.0);
 
             // let len: usize =
             //     (sample_rate.value() / (carrier.value() + (symbol as f32) * 6.25)) as usize;
@@ -95,40 +98,40 @@ impl Rx {
             let now = Instant::now();
 
             // Bandpass
-            let mut bpf1 = BandPassFilter::from_frequency(
-                config.tuner.lower_absolute(), // Low
-                config.tuner.upper_absolute(), // High
-                self.sample_rate,              // SampleRate
-            );
-            let mut bpf2 = BandPassFilter::from_frequency(
-                config.tuner.lower_absolute(), // Low
-                config.tuner.upper_absolute(), // High
-                self.sample_rate,              // SampleRate
-            );
-            let mut bpf3 = BandPassFilter::from_frequency(
-                config.tuner.lower_absolute(), // Low
-                config.tuner.upper_absolute(), // High
-                self.sample_rate,              // SampleRate
-            );
-            let bp1 = samples.into_iter().map(|sample| bpf1.next(sample));
-            let bp2 = bp1.map(|sample| bpf2.next(sample));
-            let bandpassed = bp2.map(|sample| bpf3.next(sample));
+            // let mut bpf1 = BandPassFilter::from_frequency(
+            //     config.tuner.lower_absolute(), // Low
+            //     config.tuner.upper_absolute(), // High
+            //     self.sample_rate,              // SampleRate
+            // );
+            // let mut bpf2 = BandPassFilter::from_frequency(
+            //     config.tuner.lower_absolute(), // Low
+            //     config.tuner.upper_absolute(), // High
+            //     self.sample_rate,              // SampleRate
+            // );
+            // let mut bpf3 = BandPassFilter::from_frequency(
+            //     config.tuner.lower_absolute(), // Low
+            //     config.tuner.upper_absolute(), // High
+            //     self.sample_rate,              // SampleRate
+            // );
+            // let bp1 = samples.into_iter().map(|sample| bpf1.next(sample));
+            // let bp2 = bp1.map(|sample| bpf2.next(sample));
+            // let bandpassed = bp2.map(|sample| bpf3.next(sample));
 
             // LO Mix
             // let if_carrier = config.tuner.carrier() - Frequency::Hertz(100.001);
             let if_carrier = config.tuner.carrier();
             let mut carrier = Sine::new(self.sample_rate, if_carrier);
-            let mixed = bandpassed.map(|sample| sample * carrier.next());
+            let mixed = samples.into_iter().map(|sample| sample * carrier.next());
 
             // Low Pass
-            let mut lpf = LowPassFilter::from_frequency(
-                Frequency::Hertz(1000.0),
-                self.sample_rate, // SampleRate
-            );
-            let low_passed = mixed.map(|sample| lpf.next(sample));
+            // let mut lpf = LowPassFilter::from_frequency(
+            //     Frequency::Hertz(1000.0),
+            //     self.sample_rate, // SampleRate
+            // );
+            // let low_passed = mixed.map(|sample| lpf.next(sample));
 
             // Collect into signal
-            let signal: Vec<SampleType> = low_passed.step_by(self.downsample_skip).collect();
+            let signal: Vec<SampleType> = mixed.step_by(self.downsample_skip).collect();
 
             if let Err(err) = self.plot_sender.try_send(signal.clone()) {
                 match err {

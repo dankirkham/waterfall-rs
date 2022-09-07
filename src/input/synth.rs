@@ -3,7 +3,8 @@ use wasm_timer::Instant;
 
 use crate::configuration::Configuration;
 use crate::input::Source;
-use crate::synth::{Ft8, Samples};
+use crate::synth::Samples;
+use crate::synth::ft8::Ft8;
 use crate::types::SampleType;
 use crate::units::Frequency;
 

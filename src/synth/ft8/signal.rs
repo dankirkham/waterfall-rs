@@ -57,7 +57,7 @@ impl Ft8 {
         let symbols: Vec<u8> = Message::default().into();
         let synth = Symbol::with_amplitude(sample_rate, carrier, symbols[0] as f32, amplitude);
         let state = MessageState::Startup;
-        let symbol_count = 10; // Give time for receiver to get ready.
+        let symbol_count = 14; // Give time for receiver to get ready.
 
         Self {
             sample_rate,

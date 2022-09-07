@@ -47,8 +47,8 @@ enum SyncState {
     One,
     Four,
     Zero,
-    Five,
     Six,
+    Five,
     Two,
 }
 
@@ -87,18 +87,18 @@ impl SyncState {
                 SyncState::Three
             },
             SyncState::Zero => if *symbol == Symbol::Zero {
-                SyncState::Five
-            } else {
-                done = Some(false);
-                SyncState::Three
-            },
-            SyncState::Five => if *symbol == Symbol::Five {
                 SyncState::Six
             } else {
                 done = Some(false);
                 SyncState::Three
             },
             SyncState::Six => if *symbol == Symbol::Six {
+                SyncState::Five
+            } else {
+                done = Some(false);
+                SyncState::Three
+            },
+            SyncState::Five => if *symbol == Symbol::Five {
                 SyncState::Two
             } else {
                 done = Some(false);
