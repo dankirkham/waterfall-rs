@@ -8,6 +8,7 @@ use wasm_timer::Instant;
 use crate::configuration::Configuration;
 use crate::dsp::Processor;
 use crate::input::{Audio, InputSource, Source, Synth};
+use crate::scope::Scope as ScopeController;
 use crate::statistics::{MovingAverage, Statistics};
 use crate::types::SampleType;
 use crate::ui::{About, Messages, Scope, Settings, Toolbar, WaterfallPlot, Windows};
@@ -18,10 +19,9 @@ pub struct App {
 
     config: Configuration,
 
-    plot_rx: mpsc::Receiver<Vec<SampleType>>,
-    plot_data: Vec<SampleType>,
-
     processor: Processor,
+
+    scope: ScopeController,
 
     source: Box<dyn Source>,
     input_source: InputSource,
@@ -43,6 +43,8 @@ impl App {
 
         let processor = Processor::new(sample_rx, image_tx, plot_tx, &config);
 
+        let scope = ScopeController::new(plot_rx);
+
         let input_source = config.input_source;
         let source = Self::create_source(&config, sample_tx);
 
@@ -53,10 +55,9 @@ impl App {
             image: None,
             config,
 
-            plot_rx,
-            plot_data: Vec::new(),
-
             processor,
+
+            scope,
 
             source,
             input_source,
@@ -90,6 +91,8 @@ impl eframe::App for App {
         self.source.run(&self.config);
         self.processor.run(&self.config, &mut self.stats);
 
+        self.scope.run(&mut self.config);
+
         // egui::TopBottomPanel::top("top_panel").show(ctx, |ui| {
         //     egui::menu::bar(ui, |ui| {
         //         ui.menu_button("File", |ui| {
@@ -104,10 +107,6 @@ impl eframe::App for App {
             let ri = RetainedImage::from_color_image("waterfall-image", im.to_owned())
                 .with_texture_filter(TextureFilter::Nearest);
             self.image = Some(ri);
-        }
-
-        while let Ok(plot_data) = self.plot_rx.try_recv() {
-            self.plot_data = plot_data;
         }
 
         egui::TopBottomPanel::top("toolbar").show(ctx, |ui| {
@@ -125,7 +124,7 @@ impl eframe::App for App {
         egui::Window::new("🗠 Oscilloscope")
             .open(&mut self.show.scope)
             .show(ctx, |ui| {
-                let mut scope = Scope::new(&mut self.config, &self.plot_data);
+                let mut scope = Scope::new(&mut self.config, &self.scope.get_plot_data());
                 scope.ui(ui);
             });
 

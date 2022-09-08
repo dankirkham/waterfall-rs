@@ -5,38 +5,16 @@ use crate::configuration::{AxisMode, Configuration, ScopeMode, TriggerMode, Trig
 use crate::types::SampleType;
 
 pub struct Scope<'a> {
-    plot_data: &'a Vec<SampleType>,
+    plot_data: &'a [SampleType],
     config: &'a mut Configuration,
 }
 
-fn trigger_position(data: &[SampleType], settings: &TriggerSettings) -> Option<usize> {
-    let TriggerSettings { mode, level } = settings;
-    let lower = |d| d < level;
-    let higher = |d| d > level;
-    match mode {
-        TriggerMode::Rising => {
-            let below = data.iter().position(lower)?;
-            data[below..].iter().position(higher)
-        }
-        TriggerMode::Falling => {
-            let above = data.iter().position(higher)?;
-            data[above..].iter().position(lower)
-        }
-        TriggerMode::Auto => Some(0),
-    }
-}
-
 impl<'a> Scope<'a> {
-    pub fn new(config: &'a mut Configuration, plot_data: &'a Vec<SampleType>) -> Self {
+    pub fn new(config: &'a mut Configuration, plot_data: &'a [SampleType]) -> Self {
         Self { config, plot_data }
     }
 
     pub fn ui(&mut self, ui: &mut egui::Ui) {
-        let plot_data = match trigger_position(self.plot_data, &self.config.scope.trigger) {
-            Some(start_pos) => &self.plot_data[start_pos..],
-            None => &[],
-        };
-
         ui.horizontal(|ui| {
             ui.with_layout(egui::Layout::right_to_left(), |ui| {
                 let red = if ui.style().visuals.dark_mode {
@@ -83,7 +61,7 @@ impl<'a> Scope<'a> {
             });
         });
 
-        let line = Line::new(Values::from_ys_f32(plot_data));
+        let line = Line::new(Values::from_ys_f32(&self.plot_data));
         Plot::new("Scope")
             // .view_aspect(1.732)
             .center_y_axis(true)

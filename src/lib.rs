@@ -3,6 +3,7 @@ pub mod configuration;
 pub mod dsp;
 pub mod filter;
 pub mod input;
+pub mod scope;
 pub mod statistics;
 pub mod synth;
 pub mod types;
