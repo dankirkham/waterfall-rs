@@ -154,6 +154,9 @@ impl eframe::App for App {
                 if let Some(avg) = self.stats.render.avg() {
                     ui.label(format!("Render: {}", avg));
                 }
+                ui.with_layout(egui::Layout::right_to_left(), |ui| {
+                    ui.label("FT-8 Sync ⭕");
+                });
             });
         });
 

@@ -1,4 +1,5 @@
 use tokio::sync::mpsc::Sender;
+use rand::{thread_rng, Rng};
 use wasm_timer::Instant;
 
 use crate::configuration::Configuration;
@@ -47,10 +48,16 @@ impl Source for Synth {
             let new_samples = (elapsed * self.sample_rate.value()) as usize;
 
             if new_samples > 0 {
+                let mut rng = thread_rng();
+
                 let mut samples: Vec<SampleType> = Vec::with_capacity(new_samples);
                 (0..new_samples)
                     .into_iter()
-                    .for_each(|_| samples.push(self.signal.next()));
+                    .for_each(|_| {
+                        let r: f32 = rng.gen();
+                        let noise: f32 = 0.001 * r;
+                        samples.push(noise + self.signal.next());
+                    });
 
                 self.sender.try_send(samples).unwrap();
             }

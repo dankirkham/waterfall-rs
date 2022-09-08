@@ -1,3 +1,6 @@
+use rand::{thread_rng, Rng};
+use rand::distributions::Standard;
+
 pub fn sync_sequence() -> Vec<u8> {
     vec![3, 1, 4, 0, 6, 5, 2]
 }
@@ -6,7 +9,10 @@ pub fn sync_sequence() -> Vec<u8> {
 struct Callsign28;
 impl Into<Vec<bool>> for Callsign28 {
     fn into(self) -> Vec<bool> {
-        vec![false; 28]
+        let mut rng = thread_rng();
+        let v: Vec<bool> = thread_rng().sample_iter(&Standard).take(28).collect();
+        v
+        // vec![false; 28]
     }
 }
 
@@ -14,7 +20,10 @@ impl Into<Vec<bool>> for Callsign28 {
 struct Rover1;
 impl Into<Vec<bool>> for Rover1 {
     fn into(self) -> Vec<bool> {
-        vec![false; 1]
+        let mut rng = thread_rng();
+        let v: Vec<bool> = thread_rng().sample_iter(&Standard).take(1).collect();
+        v
+        // vec![false; 1]
     }
 }
 
@@ -22,7 +31,10 @@ impl Into<Vec<bool>> for Rover1 {
 struct Grid15;
 impl Into<Vec<bool>> for Grid15 {
     fn into(self) -> Vec<bool> {
-        vec![false; 15]
+        let mut rng = thread_rng();
+        let v: Vec<bool> = thread_rng().sample_iter(&Standard).take(15).collect();
+        v
+        // vec![false; 15]
     }
 }
 
@@ -30,7 +42,10 @@ impl Into<Vec<bool>> for Grid15 {
 struct Roger1;
 impl Into<Vec<bool>> for Roger1 {
     fn into(self) -> Vec<bool> {
-        vec![false; 1]
+        let mut rng = thread_rng();
+        let v: Vec<bool> = thread_rng().sample_iter(&Standard).take(1).collect();
+        v
+        // vec![false; 1]
     }
 }
 
@@ -38,7 +53,10 @@ impl Into<Vec<bool>> for Roger1 {
 struct Checksum14;
 impl Into<Vec<bool>> for Checksum14 {
     fn into(self) -> Vec<bool> {
-        vec![false; 97] // 14 + 83 bits for forward error correction
+        let mut rng = thread_rng();
+        let v: Vec<bool> = thread_rng().sample_iter(&Standard).take(97).collect();
+        v
+        // vec![false; 97] // 14 + 83 bits for forward error correction
     }
 }
 
