@@ -1,5 +1,5 @@
-use egui::*;
 use crate::configuration::{Configuration, ScopeMode};
+use egui::*;
 
 pub struct Buttons<'a> {
     config: &'a mut Configuration,

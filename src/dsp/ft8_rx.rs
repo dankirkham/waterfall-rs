@@ -26,9 +26,9 @@ impl From<usize> for Symbol {
     }
 }
 
-impl Into<Vec<bool>> for Symbol {
-    fn into(self) -> Vec<bool> {
-        match self {
+impl From<Symbol> for Vec<bool> {
+    fn from(symbol: Symbol) -> Vec<bool> {
+        match symbol {
             Symbol::Zero => vec![false, false, false],
             Symbol::One => vec![false, false, true],
             Symbol::Two => vec![false, true, true],
@@ -66,55 +66,69 @@ impl SyncState {
     pub fn next(&mut self, symbol: &Symbol) -> Option<bool> {
         let mut done = None;
         *self = match *self {
-            SyncState::Three => if *symbol == Symbol::Three {
-                SyncState::One
-            } else {
-                done = Some(false);
-                SyncState::Three
-            },
-            SyncState::One => if *symbol == Symbol::One {
-                println!("Two deep into Sync");
-                SyncState::Four
-            } else {
-                done = Some(false);
-                SyncState::Three
-            },
-            SyncState::Four => if *symbol == Symbol::Four {
-                println!("Three deep into Sync");
-                SyncState::Zero
-            } else {
-                done = Some(false);
-                SyncState::Three
-            },
-            SyncState::Zero => if *symbol == Symbol::Zero {
-                SyncState::Six
-            } else {
-                done = Some(false);
-                SyncState::Three
-            },
-            SyncState::Six => if *symbol == Symbol::Six {
-                SyncState::Five
-            } else {
-                done = Some(false);
-                SyncState::Three
-            },
-            SyncState::Five => if *symbol == Symbol::Five {
-                SyncState::Two
-            } else {
-                done = Some(false);
-                SyncState::Three
-            },
-            SyncState::Two => if *symbol == Symbol::Two {
-                println!("Got a Sync!");
-                done = Some(true);
-                SyncState::Three
-            } else {
-                done = Some(false);
-                SyncState::Three
-            },
+            SyncState::Three => {
+                if *symbol == Symbol::Three {
+                    SyncState::One
+                } else {
+                    done = Some(false);
+                    SyncState::Three
+                }
+            }
+            SyncState::One => {
+                if *symbol == Symbol::One {
+                    println!("Two deep into Sync");
+                    SyncState::Four
+                } else {
+                    done = Some(false);
+                    SyncState::Three
+                }
+            }
+            SyncState::Four => {
+                if *symbol == Symbol::Four {
+                    println!("Three deep into Sync");
+                    SyncState::Zero
+                } else {
+                    done = Some(false);
+                    SyncState::Three
+                }
+            }
+            SyncState::Zero => {
+                if *symbol == Symbol::Zero {
+                    SyncState::Six
+                } else {
+                    done = Some(false);
+                    SyncState::Three
+                }
+            }
+            SyncState::Six => {
+                if *symbol == Symbol::Six {
+                    SyncState::Five
+                } else {
+                    done = Some(false);
+                    SyncState::Three
+                }
+            }
+            SyncState::Five => {
+                if *symbol == Symbol::Five {
+                    SyncState::Two
+                } else {
+                    done = Some(false);
+                    SyncState::Three
+                }
+            }
+            SyncState::Two => {
+                if *symbol == Symbol::Two {
+                    println!("Got a Sync!");
+                    done = Some(true);
+                    SyncState::Three
+                } else {
+                    done = Some(false);
+                    SyncState::Three
+                }
+            }
         };
 
-        return done;
+        done
     }
 }
 
@@ -145,42 +159,48 @@ impl Ft8Rx {
     pub fn next(&mut self, symbol: Symbol) -> Option<Vec<bool>> {
         let mut message: Option<Vec<bool>> = None;
         match self.state {
-            State::Sync1 => if let Some(result) = self.sync_state.next(&symbol) {
-                if result {
-                    self.state = State::MessageA;
-                    self.message_symbols = 29;
+            State::Sync1 => {
+                if let Some(result) = self.sync_state.next(&symbol) {
+                    if result {
+                        self.state = State::MessageA;
+                        self.message_symbols = 29;
+                    }
                 }
-            },
+            }
             State::MessageA => {
                 self.push_symbol(symbol);
                 self.message_symbols -= 1;
                 if self.message_symbols == 0 {
                     self.state = State::Sync2;
                 }
-            },
-            State::Sync2 => if let Some(result) = self.sync_state.next(&symbol) {
-                if result {
-                    self.state = State::MessageB;
-                    self.message_symbols = 29;
-                } else {
-                    self.reset();
+            }
+            State::Sync2 => {
+                if let Some(result) = self.sync_state.next(&symbol) {
+                    if result {
+                        self.state = State::MessageB;
+                        self.message_symbols = 29;
+                    } else {
+                        self.reset();
+                    }
                 }
-            },
+            }
             State::MessageB => {
                 self.push_symbol(symbol);
                 self.message_symbols -= 1;
                 if self.message_symbols == 0 {
                     self.state = State::Sync3;
                 }
-            },
-            State::Sync3 => if let Some(result) = self.sync_state.next(&symbol) {
-                if result {
-                    let mut bits: Vec<bool> = Vec::with_capacity(58);
-                    std::mem::swap(&mut bits, &mut self.bits);
-                    message = Some(bits);
+            }
+            State::Sync3 => {
+                if let Some(result) = self.sync_state.next(&symbol) {
+                    if result {
+                        let mut bits: Vec<bool> = Vec::with_capacity(58);
+                        std::mem::swap(&mut bits, &mut self.bits);
+                        message = Some(bits);
+                    }
+                    self.reset();
                 }
-                self.reset();
-            },
+            }
         }
         message
     }

@@ -19,10 +19,10 @@ impl<'a> ScopeViewer<'a> {
     }
 
     pub fn ui(&mut self, ui: &mut egui::Ui) {
-        let mut buttons = Buttons::new(&mut self.config);
+        let mut buttons = Buttons::new(self.config);
         buttons.ui(ui);
 
-        let line = Line::new(Values::from_ys_f32(&self.plot_data));
+        let line = Line::new(Values::from_ys_f32(self.plot_data));
         Plot::new("Scope")
             // .view_aspect(1.732)
             .center_y_axis(true)
@@ -33,7 +33,7 @@ impl<'a> ScopeViewer<'a> {
             // .width(400.0)
             .show(ui, |plot_ui| plot_ui.line(line));
 
-        let mut settings = Settings::new(&mut self.config);
+        let mut settings = Settings::new(self.config);
         settings.ui(ui);
     }
 }

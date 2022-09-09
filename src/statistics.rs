@@ -23,7 +23,8 @@ impl<T> Default for DataSeries<T> {
 }
 
 impl<T> DataSeries<T>
-    where T : Clone + Sum<T> + Div<u32, Output = T>
+where
+    T: Clone + Sum<T> + Div<u32, Output = T>,
 {
     pub fn push(&mut self, val: T) {
         if self.times.len() >= 10 {
@@ -34,7 +35,7 @@ impl<T> DataSeries<T>
     }
 
     pub fn avg(&self) -> Option<T> {
-        if self.times.len() == 0 {
+        if self.times.is_empty() {
             return None;
         }
 

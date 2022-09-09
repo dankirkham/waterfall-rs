@@ -1,7 +1,7 @@
+use crate::synth::ft8::message::{sync_sequence, Message};
 use crate::synth::ft8::Symbol;
 use crate::synth::Samples;
 use crate::units::Frequency;
-use crate::synth::ft8::message::{Message, sync_sequence};
 
 #[derive(Copy, Clone, Debug, PartialEq)]
 enum MessageState {

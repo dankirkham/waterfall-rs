@@ -71,8 +71,8 @@ impl App {
 
     fn create_source(config: &Configuration, tx: mpsc::Sender<Vec<SampleType>>) -> Box<dyn Source> {
         match config.input_source {
-            InputSource::Synth => Box::new(Synth::new(tx, &config)),
-            InputSource::Audio => Box::new(Audio::new(tx, &config)),
+            InputSource::Synth => Box::new(Synth::new(tx, config)),
+            InputSource::Audio => Box::new(Audio::new(tx, config)),
         }
     }
 }
@@ -123,21 +123,21 @@ impl eframe::App for App {
         egui::Window::new("🗠 Oscilloscope")
             .open(&mut self.show.scope)
             .show(ctx, |ui| {
-                let mut scope = ScopeViewer::new(&mut self.config, &self.scope.get_plot_data());
+                let mut scope = ScopeViewer::new(&mut self.config, self.scope.get_plot_data());
                 scope.ui(ui);
             });
 
         egui::Window::new("❔ About")
             .open(&mut self.show.about)
             .show(ctx, |ui| {
-                let mut about = About::new();
+                let mut about = About::default();
                 about.ui(ui);
             });
 
         egui::Window::new("📻 Messages")
             .open(&mut self.show.messages)
             .show(ctx, |ui| {
-                let mut messages = Messages::new();
+                let mut messages = Messages::default();
                 messages.ui(ui);
             });
 

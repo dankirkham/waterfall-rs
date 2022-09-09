@@ -1,5 +1,5 @@
-use egui::*;
 use crate::configuration::{AxisMode, Configuration, TriggerMode};
+use egui::*;
 
 pub struct Settings<'a> {
     config: &'a mut Configuration,

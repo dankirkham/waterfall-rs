@@ -5,9 +5,9 @@ use tokio::sync::mpsc::Sender;
 use wasm_timer::Instant;
 
 use crate::configuration::Configuration;
-use crate::dsp::ft8_rx::{Ft8Rx, Symbol as Ft8Symbol};
 use crate::dsp::aggregator::Aggregator;
 use crate::dsp::correlator::{Correlator, OperandData};
+use crate::dsp::ft8_rx::{Ft8Rx, Symbol as Ft8Symbol};
 use crate::statistics::Statistics;
 use crate::synth::ft8::SingleSymbol;
 use crate::synth::{Samples, Sine};
@@ -58,7 +58,8 @@ impl Rx {
         let correlator = Correlator::new(ideal_buffer_len);
 
         for symbol in 0..8 {
-            let mut gen = SingleSymbol::with_amplitude(baseband_sample_rate, carrier, symbol as f32, 1.0);
+            let mut gen =
+                SingleSymbol::with_amplitude(baseband_sample_rate, carrier, symbol as f32, 1.0);
 
             // let len: usize =
             //     (sample_rate.value() / (carrier.value() + (symbol as f32) * 6.25)) as usize;

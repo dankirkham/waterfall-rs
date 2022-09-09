@@ -51,16 +51,12 @@ impl Samples for Symbol {
         let modulation_index = 1.0; // little h
         let k = 5.336;
 
-        let p1 = (1.0 / (2.0 * signaling_interval)) *
-            (
-                (erf((k * 2.0 * (t1 / signaling_interval + 0.5)) as f64) as f32) -
-                (erf((k * 2.0 * (t1 / signaling_interval - 0.5)) as f64) as f32)
-            );
-        let p = (1.0 / (2.0 * signaling_interval)) *
-            (
-                (erf((k * 2.0 * (t / signaling_interval + 0.5)) as f64) as f32) -
-                (erf((k * 2.0 * (t / signaling_interval - 0.5)) as f64) as f32)
-            );
+        let p1 = (1.0 / (2.0 * signaling_interval))
+            * ((erf((k * 2.0 * (t1 / signaling_interval + 0.5)) as f64) as f32)
+                - (erf((k * 2.0 * (t1 / signaling_interval - 0.5)) as f64) as f32));
+        let p = (1.0 / (2.0 * signaling_interval))
+            * ((erf((k * 2.0 * (t / signaling_interval + 0.5)) as f64) as f32)
+                - (erf((k * 2.0 * (t / signaling_interval - 0.5)) as f64) as f32));
         let f_d = modulation_index * (self.symbol * p1 + self.previous_symbol * p);
         self.phi += 2.0 * PI * f_d / self.sample_rate.value();
         if self.phi > PI {

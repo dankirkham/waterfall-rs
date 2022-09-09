@@ -92,7 +92,7 @@ impl Correlator {
 
             r_iter.map(|v: f32| v / norm).collect()
         } else {
-            r_iter.map(|v| v).collect()
+            r_iter.collect()
         };
 
         let mid = self.size / 2 + 1;

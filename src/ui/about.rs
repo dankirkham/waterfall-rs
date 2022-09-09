@@ -1,10 +1,7 @@
+#[derive(Default)]
 pub struct About;
 
 impl About {
-    pub fn new() -> Self {
-        Self {}
-    }
-
     pub fn ui(&mut self, ui: &mut egui::Ui) {
         ui.heading("waterfall-rs");
         let version: &'static str = option_env!("WATERFALL_VERSION").unwrap_or("development");

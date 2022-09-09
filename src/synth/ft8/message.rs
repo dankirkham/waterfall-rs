@@ -1,5 +1,5 @@
-use rand::{thread_rng, Rng};
 use rand::distributions::Standard;
+use rand::{thread_rng, Rng};
 
 pub fn sync_sequence() -> Vec<u8> {
     vec![3, 1, 4, 0, 6, 5, 2]
@@ -7,8 +7,8 @@ pub fn sync_sequence() -> Vec<u8> {
 
 #[derive(Default)]
 struct Callsign28;
-impl Into<Vec<bool>> for Callsign28 {
-    fn into(self) -> Vec<bool> {
+impl From<Callsign28> for Vec<bool> {
+    fn from(_: Callsign28) -> Vec<bool> {
         let v: Vec<bool> = thread_rng().sample_iter(&Standard).take(28).collect();
         v
         // vec![false; 28]
@@ -17,8 +17,8 @@ impl Into<Vec<bool>> for Callsign28 {
 
 #[derive(Default)]
 struct Rover1;
-impl Into<Vec<bool>> for Rover1 {
-    fn into(self) -> Vec<bool> {
+impl From<Rover1> for Vec<bool> {
+    fn from(_: Rover1) -> Vec<bool> {
         let v: Vec<bool> = thread_rng().sample_iter(&Standard).take(1).collect();
         v
         // vec![false; 1]
@@ -27,8 +27,8 @@ impl Into<Vec<bool>> for Rover1 {
 
 #[derive(Default)]
 struct Grid15;
-impl Into<Vec<bool>> for Grid15 {
-    fn into(self) -> Vec<bool> {
+impl From<Grid15> for Vec<bool> {
+    fn from(_: Grid15) -> Vec<bool> {
         let v: Vec<bool> = thread_rng().sample_iter(&Standard).take(15).collect();
         v
         // vec![false; 15]
@@ -37,8 +37,8 @@ impl Into<Vec<bool>> for Grid15 {
 
 #[derive(Default)]
 struct Roger1;
-impl Into<Vec<bool>> for Roger1 {
-    fn into(self) -> Vec<bool> {
+impl From<Roger1> for Vec<bool> {
+    fn from(_: Roger1) -> Vec<bool> {
         let v: Vec<bool> = thread_rng().sample_iter(&Standard).take(1).collect();
         v
         // vec![false; 1]
@@ -47,8 +47,8 @@ impl Into<Vec<bool>> for Roger1 {
 
 #[derive(Default)]
 struct Checksum14;
-impl Into<Vec<bool>> for Checksum14 {
-    fn into(self) -> Vec<bool> {
+impl From<Checksum14> for Vec<bool> {
+    fn from(_: Checksum14) -> Vec<bool> {
         let v: Vec<bool> = thread_rng().sample_iter(&Standard).take(97).collect();
         v
         // vec![false; 97] // 14 + 83 bits for forward error correction
@@ -85,9 +85,9 @@ impl Default for Message {
     }
 }
 
-impl Into<Vec<bool>> for Message {
-    fn into(self) -> Vec<bool> {
-        match self {
+impl From<Message> for Vec<bool> {
+    fn from(message: Message) -> Vec<bool> {
+        match message {
             Message::StdMsg(fields) => {
                 let mut bits: Vec<bool> = Vec::with_capacity(82);
                 // i3
@@ -117,23 +117,17 @@ impl Into<Vec<bool>> for Message {
                 bits.append(&mut checksum);
 
                 bits
-            },
-            // _ => todo!("Implement other message types"),
+            } // _ => todo!("Implement other message types"),
         }
     }
 }
 
-impl Into<Vec<u8>> for Message {
-    fn into(self) -> Vec<u8> {
-        let bits: Vec<bool> = self.into();
+impl From<Message> for Vec<u8> {
+    fn from(message: Message) -> Vec<u8> {
+        let bits: Vec<bool> = message.into();
 
-        bits
-            .chunks(3)
-            .map(|s| {
-                ((s[2] as u8) << 2) |
-                ((s[1] as u8) << 1) |
-                ((s[0] as u8) << 0)
-            })
+        bits.chunks(3)
+            .map(|s| ((s[2] as u8) << 2) | ((s[1] as u8) << 1) | (s[0] as u8))
             .collect()
     }
 }

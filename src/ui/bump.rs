@@ -29,9 +29,7 @@ impl<'a> Bump<'a> {
                     *self.value -= 1.0;
                 }
             }
-            ui.add(
-                egui::DragValue::new(self.value),
-            );
+            ui.add(egui::DragValue::new(self.value));
             if ui.add(egui::Button::new("➕")).clicked() {
                 if *self.value % 1.0 != 0.0 {
                     *self.value = self.value.ceil();

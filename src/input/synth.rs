@@ -1,11 +1,11 @@
-use tokio::sync::mpsc::Sender;
 use rand::{thread_rng, Rng};
+use tokio::sync::mpsc::Sender;
 use wasm_timer::Instant;
 
 use crate::configuration::Configuration;
 use crate::input::Source;
-use crate::synth::Samples;
 use crate::synth::ft8::Ft8;
+use crate::synth::Samples;
 use crate::types::SampleType;
 use crate::units::Frequency;
 
@@ -51,13 +51,11 @@ impl Source for Synth {
                 let mut rng = thread_rng();
 
                 let mut samples: Vec<SampleType> = Vec::with_capacity(new_samples);
-                (0..new_samples)
-                    .into_iter()
-                    .for_each(|_| {
-                        let r: f32 = rng.gen();
-                        let noise: f32 = 0.001 * r;
-                        samples.push(noise + self.signal.next());
-                    });
+                (0..new_samples).into_iter().for_each(|_| {
+                    let r: f32 = rng.gen();
+                    let noise: f32 = 0.001 * r;
+                    samples.push(noise + self.signal.next());
+                });
 
                 self.sender.try_send(samples).unwrap();
             }
