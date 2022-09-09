@@ -1,20 +1,20 @@
 use std::collections::VecDeque;
+use std::iter::Sum;
+use std::ops::Div;
 use std::time::Duration;
-
-use crate::units::Time;
 
 #[derive(Default)]
 pub struct Statistics {
-    pub rx: MovingAverage,
-    pub render: MovingAverage,
-    pub waterfall: MovingAverage,
+    pub rx: DataSeries<Duration>,
+    pub render: DataSeries<Duration>,
+    pub waterfall: DataSeries<Duration>,
 }
 
-pub struct MovingAverage {
-    times: VecDeque<Duration>,
+pub struct DataSeries<T> {
+    times: VecDeque<T>,
 }
 
-impl Default for MovingAverage {
+impl<T> Default for DataSeries<T> {
     fn default() -> Self {
         let times = VecDeque::with_capacity(10);
 
@@ -22,22 +22,24 @@ impl Default for MovingAverage {
     }
 }
 
-impl MovingAverage {
-    pub fn push(&mut self, duration: Duration) {
+impl<T> DataSeries<T>
+    where T : Clone + Sum<T> + Div<u32, Output = T>
+{
+    pub fn push(&mut self, val: T) {
         if self.times.len() >= 10 {
             self.times.pop_front();
         }
 
-        self.times.push_back(duration);
+        self.times.push_back(val);
     }
 
-    pub fn avg(&self) -> Option<Time> {
+    pub fn avg(&self) -> Option<T> {
         if self.times.len() == 0 {
             return None;
         }
 
-        let sum: Duration = self.times.iter().sum();
+        let sum: T = self.times.clone().into_iter().sum();
         let avg = sum / self.times.len().try_into().unwrap();
-        Some(avg.into())
+        Some(avg)
     }
 }

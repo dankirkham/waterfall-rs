@@ -1,5 +1,3 @@
-use egui::*;
-
 pub struct Bump<'a> {
     value: &'a mut f32,
     label: String,

@@ -34,8 +34,9 @@ impl Aggregator {
     }
 }
 
+#[cfg(test)]
 mod tests {
-    use super::*;
+    use crate::dsp::Aggregator;
 
     #[test]
     fn test_aggregate() {

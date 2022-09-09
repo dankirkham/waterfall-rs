@@ -8,8 +8,7 @@ use crate::configuration::Configuration;
 use crate::dsp::ft8_rx::{Ft8Rx, Symbol as Ft8Symbol};
 use crate::dsp::aggregator::Aggregator;
 use crate::dsp::correlator::{Correlator, OperandData};
-use crate::filter::{BandPassFilter, Filter, LowPassFilter};
-use crate::statistics::{MovingAverage, Statistics};
+use crate::statistics::Statistics;
 use crate::synth::ft8::SingleSymbol;
 use crate::synth::{Samples, Sine};
 use crate::types::SampleType;
@@ -156,7 +155,7 @@ impl Rx {
 
             println!("Decoded: {}", symbol);
             let ft8_sym = Ft8Symbol::from(symbol);
-            if let Some(message) = self.ft8_rx.next(ft8_sym) {
+            if let Some(_message) = self.ft8_rx.next(ft8_sym) {
                 println!("An FT8 message was received!");
             }
         }

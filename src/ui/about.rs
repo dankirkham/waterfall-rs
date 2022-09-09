@@ -1,8 +1,3 @@
-use std::env;
-use std::fmt;
-
-use egui::*;
-
 pub struct About;
 
 impl About {

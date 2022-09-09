@@ -11,7 +11,7 @@ use wasm_timer::Instant;
 
 use crate::configuration::Configuration;
 use crate::dsp::aggregator::Aggregator;
-use crate::statistics::{MovingAverage, Statistics};
+use crate::statistics::Statistics;
 use crate::types::{SampleType, PLOT_DEPTH};
 
 use super::turbo::get_color;

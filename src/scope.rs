@@ -1,8 +1,7 @@
 use tokio::sync::mpsc;
 
-use crate::configuration::{AxisMode, Configuration, ScopeMode, TriggerMode, TriggerSettings};
+use crate::configuration::{Configuration, ScopeMode, TriggerMode, TriggerSettings};
 use crate::types::SampleType;
-use crate::statistics::MovingAverage;
 
 fn trigger_position(data: &[SampleType], settings: &TriggerSettings) -> Option<usize> {
     let TriggerSettings { mode, level } = settings;

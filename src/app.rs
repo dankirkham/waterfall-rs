@@ -1,5 +1,3 @@
-use std::fmt;
-
 use egui::*;
 use egui_extras::image::RetainedImage;
 use tokio::sync::mpsc;
@@ -8,10 +6,11 @@ use wasm_timer::Instant;
 use crate::configuration::Configuration;
 use crate::dsp::Processor;
 use crate::input::{Audio, InputSource, Source, Synth};
-use crate::scope::Scope as ScopeController;
-use crate::statistics::{MovingAverage, Statistics};
+use crate::scope::Scope;
+use crate::statistics::Statistics;
 use crate::types::SampleType;
-use crate::ui::{About, Messages, Scope, Settings, Toolbar, WaterfallPlot, Windows};
+use crate::ui::{About, Messages, ScopeViewer, Settings, Toolbar, WaterfallPlot, Windows};
+use crate::units::Time;
 
 pub struct App {
     image_rx: mpsc::Receiver<ColorImage>,
@@ -21,7 +20,7 @@ pub struct App {
 
     processor: Processor,
 
-    scope: ScopeController,
+    scope: Scope,
 
     source: Box<dyn Source>,
     input_source: InputSource,
@@ -43,7 +42,7 @@ impl App {
 
         let processor = Processor::new(sample_rx, image_tx, plot_tx, &config);
 
-        let scope = ScopeController::new(plot_rx);
+        let scope = Scope::new(plot_rx);
 
         let input_source = config.input_source;
         let source = Self::create_source(&config, sample_tx);
@@ -124,7 +123,7 @@ impl eframe::App for App {
         egui::Window::new("🗠 Oscilloscope")
             .open(&mut self.show.scope)
             .show(ctx, |ui| {
-                let mut scope = Scope::new(&mut self.config, &self.scope.get_plot_data());
+                let mut scope = ScopeViewer::new(&mut self.config, &self.scope.get_plot_data());
                 scope.ui(ui);
             });
 
@@ -145,13 +144,16 @@ impl eframe::App for App {
         egui::TopBottomPanel::bottom("status").show(ctx, |ui| {
             ui.horizontal(|ui| {
                 if let Some(avg) = self.stats.rx.avg() {
-                    ui.label(format!("RX: {}", avg));
+                    let t: Time = avg.into();
+                    ui.label(format!("RX: {}", t));
                 }
                 if let Some(avg) = self.stats.waterfall.avg() {
-                    ui.label(format!("Waterfall: {}", avg));
+                    let t: Time = avg.into();
+                    ui.label(format!("Waterfall: {}", t));
                 }
                 if let Some(avg) = self.stats.render.avg() {
-                    ui.label(format!("Render: {}", avg));
+                    let t: Time = avg.into();
+                    ui.label(format!("Render: {}", t));
                 }
                 ui.with_layout(egui::Layout::right_to_left(), |ui| {
                     ui.label("FT-8 Sync ⭕");
@@ -172,8 +174,8 @@ impl eframe::App for App {
         //     });
         // });
 
-        let fft_depth = self.config.fft_depth;
-        let audio_sample_rate = self.config.audio_sample_rate;
+        // let fft_depth = self.config.fft_depth;
+        // let audio_sample_rate = self.config.audio_sample_rate;
         // ctx.request_repaint_after(std::time::Duration::from_millis(
         //     (fft_depth as f32 / audio_sample_rate as f32 * 1000.0) as u64,
         // ));

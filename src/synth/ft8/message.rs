@@ -9,7 +9,6 @@ pub fn sync_sequence() -> Vec<u8> {
 struct Callsign28;
 impl Into<Vec<bool>> for Callsign28 {
     fn into(self) -> Vec<bool> {
-        let mut rng = thread_rng();
         let v: Vec<bool> = thread_rng().sample_iter(&Standard).take(28).collect();
         v
         // vec![false; 28]
@@ -20,7 +19,6 @@ impl Into<Vec<bool>> for Callsign28 {
 struct Rover1;
 impl Into<Vec<bool>> for Rover1 {
     fn into(self) -> Vec<bool> {
-        let mut rng = thread_rng();
         let v: Vec<bool> = thread_rng().sample_iter(&Standard).take(1).collect();
         v
         // vec![false; 1]
@@ -31,7 +29,6 @@ impl Into<Vec<bool>> for Rover1 {
 struct Grid15;
 impl Into<Vec<bool>> for Grid15 {
     fn into(self) -> Vec<bool> {
-        let mut rng = thread_rng();
         let v: Vec<bool> = thread_rng().sample_iter(&Standard).take(15).collect();
         v
         // vec![false; 15]
@@ -42,7 +39,6 @@ impl Into<Vec<bool>> for Grid15 {
 struct Roger1;
 impl Into<Vec<bool>> for Roger1 {
     fn into(self) -> Vec<bool> {
-        let mut rng = thread_rng();
         let v: Vec<bool> = thread_rng().sample_iter(&Standard).take(1).collect();
         v
         // vec![false; 1]
@@ -53,7 +49,6 @@ impl Into<Vec<bool>> for Roger1 {
 struct Checksum14;
 impl Into<Vec<bool>> for Checksum14 {
     fn into(self) -> Vec<bool> {
-        let mut rng = thread_rng();
         let v: Vec<bool> = thread_rng().sample_iter(&Standard).take(97).collect();
         v
         // vec![false; 97] // 14 + 83 bits for forward error correction
@@ -71,16 +66,16 @@ pub struct StdMsgFields {
 }
 
 pub enum Message {
-    FreeText,
-    Dxpedition,
-    FieldDay1,
-    FieldDay2,
-    Telemetry,
+    // FreeText,
+    // Dxpedition,
+    // FieldDay1,
+    // FieldDay2,
+    // Telemetry,
     StdMsg(StdMsgFields),
-    EuVhf1,
-    RttyRu,
-    NonStdCall,
-    EuVhf2,
+    // EuVhf1,
+    // RttyRu,
+    // NonStdCall,
+    // EuVhf2,
 }
 
 impl Default for Message {
@@ -123,7 +118,7 @@ impl Into<Vec<bool>> for Message {
 
                 bits
             },
-            _ => todo!("Implement other message types"),
+            // _ => todo!("Implement other message types"),
         }
     }
 }

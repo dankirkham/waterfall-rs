@@ -39,10 +39,8 @@ impl MessageState {
 
 pub struct Ft8 {
     sample_rate: Frequency,
-    carrier: Frequency,
     sample: u64,
     symbol_count: usize,
-    amplitude: f32,
     synth: Symbol,
     symbols: Vec<u8>,
     sync_symbols: Vec<u8>,
@@ -61,10 +59,8 @@ impl Ft8 {
 
         Self {
             sample_rate,
-            carrier,
             sample: (sample_rate.value() * signaling_interval) as u64,
             symbol_count,
-            amplitude,
             synth,
             symbols,
             sync_symbols,
@@ -83,7 +79,7 @@ impl Samples for Ft8 {
             if self.symbol_count == 0 {
                 self.state = self.state.next();
                 match self.state.is_message() {
-                    true => self.symbol_count = (self.symbols.len() / 2),
+                    true => self.symbol_count = self.symbols.len() / 2,
                     false => self.symbol_count = self.sync_symbols.len(),
                 }
             }

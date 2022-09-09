@@ -2,7 +2,7 @@ mod about;
 mod bump;
 mod filter_cutoff;
 mod messages;
-mod scope;
+mod scope_viewer;
 mod settings;
 mod toolbar;
 mod waterfall_plot;
@@ -11,7 +11,7 @@ mod windows;
 
 pub use about::About;
 pub use messages::Messages;
-pub use scope::Scope;
+pub use scope_viewer::ScopeViewer;
 pub use settings::Settings;
 pub use toolbar::Toolbar;
 pub use waterfall_plot::WaterfallPlot;
