@@ -17,5 +17,7 @@ jobs:
     - name: Install libasound2-dev
       run: sudo apt-get install -y libasound2-dev
     - uses: actions/checkout@v3
+    - name: Install nightly toolchain
+      run: rustup target add nightly-x86_64-unknown-linux-gnu
     - name: Run bench
       run: cargo +nightly bench
