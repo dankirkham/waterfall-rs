@@ -32,6 +32,15 @@ impl Aggregator {
 
         Some(subset)
     }
+
+    /// Take another Aggregator's data. It will be placed at the front of the
+    /// queue.
+    pub fn take_data(&mut self, donor: &mut Self) {
+        std::mem::swap(&mut self.data, &mut donor.data);
+        if !self.data.is_empty() {
+            self.data.append(&mut donor.data);
+        }
+    }
 }
 
 #[cfg(test)]
@@ -71,5 +80,65 @@ mod tests {
 
         let o4 = agg.get_slice();
         assert!(o4.is_none());
+    }
+
+    #[test]
+    fn test_take_data_empty() {
+        let mut short = Aggregator::new(2);
+        let mut long = Aggregator::new(4);
+
+        let a = vec![1.0, 2.0];
+        let b = vec![3.0, 4.0];
+
+        long.aggregate(a);
+        long.aggregate(b);
+
+        short.take_data(&mut long);
+
+        let o1 = short.get_slice();
+        assert!(o1.is_some());
+        let r1 = o1.unwrap();
+        assert_eq!(r1[0], 1.0);
+        assert_eq!(r1[1], 2.0);
+
+        let o2 = short.get_slice();
+        assert!(o2.is_some());
+        let r2 = o2.unwrap();
+        assert_eq!(r2[0], 3.0);
+        assert_eq!(r2[1], 4.0);
+    }
+
+    #[test]
+    fn test_take_data_not_empty() {
+        let mut short = Aggregator::new(2);
+        let mut long = Aggregator::new(4);
+
+        let a = vec![1.0, 2.0];
+        let b = vec![3.0, 4.0];
+        let c = vec![5.0, 6.0];
+
+        long.aggregate(a);
+        long.aggregate(b);
+        short.aggregate(c);
+
+        short.take_data(&mut long);
+
+        let o1 = short.get_slice();
+        assert!(o1.is_some());
+        let r1 = o1.unwrap();
+        assert_eq!(r1[0], 1.0);
+        assert_eq!(r1[1], 2.0);
+
+        let o2 = short.get_slice();
+        assert!(o2.is_some());
+        let r2 = o2.unwrap();
+        assert_eq!(r2[0], 3.0);
+        assert_eq!(r2[1], 4.0);
+
+        let o3 = short.get_slice();
+        assert!(o3.is_some());
+        let r3 = o3.unwrap();
+        assert_eq!(r3[0], 5.0);
+        assert_eq!(r3[1], 6.0);
     }
 }
