@@ -7,6 +7,7 @@ use crate::types::SampleType;
 type FftNum = f32;
 
 pub struct Correlator {
+    input_size: usize,
     size: usize,
     fft: Arc<dyn Fft<FftNum>>,
     ifft: Arc<dyn Fft<FftNum>>,
@@ -23,7 +24,14 @@ impl Correlator {
         let mut planner = FftPlanner::<FftNum>::new();
         let fft = planner.plan_fft_forward(size);
         let ifft = planner.plan_fft_inverse(size);
-        Self { fft, ifft, size }
+        Self { input_size, fft, ifft, size }
+    }
+
+    /// Round up input_size to the nearest power of two, for more speed.
+    pub fn with_pow2_len(input_size: usize) -> Self {
+        let pow2_input_size = 2_f32.powf((input_size as f32).log2().ceil()) as usize;
+        println!("Using {} for {} input size", pow2_input_size, input_size);
+        Self::new(pow2_input_size)
     }
 
     pub fn prepare_lhs(&self, input: &[SampleType]) -> OperandData {
@@ -104,7 +112,7 @@ impl Correlator {
         a: &OperandData,
         b: &OperandData,
         normalize: bool,
-    ) -> SampleType {
+    ) -> (SampleType, usize) {
         let OperandData {
             sum: a_sum,
             fft: a_complex,
@@ -121,7 +129,15 @@ impl Correlator {
 
         let r_iter = r_complex.into_iter().map(|c| c.re); // Use only real part
 
-        let mut max = r_iter.fold(-f32::INFINITY, |a, b| a.max(b));
+        let (mut max, index) = r_iter
+            .enumerate()
+            .fold((-f32::INFINITY, 0), |(max, index), (cur_index, next)| {
+                if next > max {
+                    (next, cur_index)
+                } else {
+                    (max, index)
+                }
+            });
 
         max /= self.size as f32; // FFT normalize
 
@@ -130,7 +146,15 @@ impl Correlator {
             max /= norm
         }
 
-        max
+        (max, index)
+    }
+
+    pub fn input_size(&self) -> usize {
+        self.input_size
+    }
+
+    pub fn output_size(&self) -> usize {
+        self.size
     }
 }
 
