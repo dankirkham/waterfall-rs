@@ -1,4 +1,5 @@
 use std::collections::VecDeque;
+use std::mem;
 
 use crate::types::SampleType;
 
@@ -17,6 +18,12 @@ impl Aggregator {
 
     pub fn aggregate(&mut self, new_data: Vec<SampleType>) {
         self.data.extend(new_data);
+    }
+
+    pub fn return_slice(&mut self, data: Vec<SampleType>) {
+        let mut data_v: VecDeque<SampleType> = data.into();
+        data_v.append(&mut self.data);
+        mem::swap(&mut data_v, &mut self.data);
     }
 
     pub fn get_slice(&mut self) -> Option<Vec<SampleType>> {
@@ -140,5 +147,37 @@ mod tests {
         let r3 = o3.unwrap();
         assert_eq!(r3[0], 5.0);
         assert_eq!(r3[1], 6.0);
+    }
+
+    #[test]
+    fn test_return_slice() {
+        let mut agg = Aggregator::new(4);
+
+        let a = vec![1.0, 2.0];
+        let b = vec![3.0, 4.0];
+        let c = vec![5.0, 6.0];
+
+        agg.aggregate(a);
+        agg.aggregate(b);
+        agg.aggregate(c);
+
+        let o1 = agg.get_slice();
+        let mut r1 = o1.unwrap();
+
+        let return_vec = r1.split_off(2);
+
+        assert_eq!(r1[0], 1.0);
+        assert_eq!(r1[1], 2.0);
+
+        assert_eq!(return_vec[0], 3.0);
+        assert_eq!(return_vec[1], 4.0);
+
+        agg.return_slice(return_vec);
+
+        let o2 = agg.get_slice();
+        let r2 = o2.unwrap();
+
+        assert_eq!(r2[0], 3.0);
+        assert_eq!(r2[1], 4.0);
     }
 }

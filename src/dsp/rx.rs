@@ -1,5 +1,6 @@
 use std::cmp::Ordering;
 
+use realfft::RealToComplexOdd;
 use tokio::sync::mpsc::error::TrySendError;
 use tokio::sync::mpsc::Sender;
 use wasm_timer::Instant;
@@ -15,6 +16,7 @@ use crate::synth::{Samples, Sine};
 use crate::types::SampleType;
 use crate::units::Frequency;
 
+#[derive(Copy, Clone, Debug)]
 enum RxMode {
     Sync1,
     MessageA(usize),
@@ -28,6 +30,38 @@ impl RxMode {
             RxMode::Sync1 | RxMode::Sync2 => true,
             _ => false,
         }
+    }
+
+    pub fn advance(self) -> Self {
+        let next = match self {
+            RxMode::Sync1 => RxMode::MessageA(29),
+            RxMode::MessageA(s) => {
+                if s == 0 {
+                    RxMode::Sync2
+                } else {
+                    RxMode::MessageA(s - 1)
+                }
+            },
+            RxMode::Sync2 => RxMode::MessageB(29),
+            RxMode::MessageB(s) => {
+                if s == 0 {
+                    println!("We got a message.");
+                    RxMode::Sync1
+                } else {
+                    RxMode::MessageB(s - 1)
+                }
+            },
+        };
+
+        dbg!(&next);
+        next
+    }
+
+    pub fn reset(self) -> Self {
+        let next = RxMode::Sync1;
+
+        dbg!(&next);
+        next
     }
 }
 
@@ -75,7 +109,7 @@ impl Rx {
 
         let aggregator_len = (sample_rate.value() / 6.25) as usize;
         let aggregator = Aggregator::new(aggregator_len);
-        let sync_aggregator = Aggregator::new(aggregator_len * 7);
+        let sync_aggregator = Aggregator::new(aggregator_len * 7 * 2);
 
         let buffer_len = (baseband_sample_rate.value() / 6.25) as usize;
         let correlator = Correlator::with_pow2_len(buffer_len);
@@ -124,14 +158,13 @@ impl Rx {
             *self = Self::new(self.plot_sender.clone(), config);
         }
 
-        let aggregator = match self.mode.is_sync() {
-            true => &mut self.sync_aggregator,
-            false => &mut self.aggregator,
-
+        let (aggregator, other_aggregator) = match self.mode.is_sync() {
+            true => (&mut self.sync_aggregator, &mut self.aggregator),
+            false => (&mut self.aggregator, &mut self.sync_aggregator),
         };
         aggregator.aggregate(new_samples);
 
-        while let Some(samples) = aggregator.get_slice() {
+        while let Some(mut samples) = aggregator.get_slice() {
             let now = Instant::now();
 
             // Bandpass
@@ -158,7 +191,7 @@ impl Rx {
             // let if_carrier = config.tuner.carrier() - Frequency::Hertz(100.001);
             let if_carrier = config.tuner.carrier();
             let mut carrier = Sine::new(self.sample_rate, if_carrier);
-            let mixed = samples.into_iter().map(|sample| sample * carrier.next());
+            let mixed = samples.iter().map(|sample| sample * carrier.next());
 
             // Low Pass
             // let mut lpf = LowPassFilter::from_frequency(
@@ -179,21 +212,56 @@ impl Rx {
             }
 
             // Correlate
-           if self.mode.is_sync() {
-                let lhs = self.sync_correlator.prepare_lhs(&signal);
-                let (value, position) = self.sync_correlator.correlate_max_with_prepared(&lhs, &self.sync_data, true);
-                println!("Value of {} at {}", value, position);
-           } else {
+            if self.mode.is_sync() {
+                let input_size = self.sync_correlator.input_size();
+                let (value, position) = (0..signal.len()/2)
+                    .into_iter()
+                    .step_by(64)
+                    .fold((0., 0), |max, start| {
+                        let end = if start + input_size > signal.len() {
+                            signal.len()
+                        } else {
+                            start + input_size
+                        };
+
+                        let lhs = self.sync_correlator.prepare_lhs(&signal[start..end]);
+                        let (value, position) =
+                            self.sync_correlator
+                                .correlate_max_with_prepared(&lhs, &self.sync_data, true);
+
+                        if value > max.0 {
+                            (value, end)
+                        } else {
+                            max
+                        }
+                    });
+
+                if value > 0.5 {
+                    // Advance states and return data.
+                    let return_samples = samples.split_off(position * self.downsample_skip);
+                    aggregator.return_slice(return_samples);
+                    other_aggregator.take_data(aggregator);
+                    self.mode = self.mode.advance();
+                } else {
+                    self.mode = self.mode.reset();
+                }
+                println!("Max value of {} at {}", value, position);
+            } else {
                 let lhs = self.correlator.prepare_lhs(&signal);
                 let symbol = self
                     .symbols
                     .iter()
-                    .map(|syn| self.correlator.correlate_max_with_prepared(&lhs, syn, true).0)
+                    .map(|syn| {
+                        self.correlator
+                            .correlate_max_with_prepared(&lhs, syn, true)
+                            .0
+                    })
                     .enumerate()
                     .max_by(|(_, a), (_, b)| a.partial_cmp(b).unwrap_or(Ordering::Equal))
                     .map(|(index, _)| index)
                     .unwrap();
-           }
+                self.mode = self.mode.advance();
+            }
 
             let elapsed = now.elapsed();
             stats.rx.push(elapsed);

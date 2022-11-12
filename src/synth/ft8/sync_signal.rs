@@ -1,5 +1,5 @@
-use crate::synth::ft8::Symbol;
 use crate::synth::ft8::message::sync_sequence;
+use crate::synth::ft8::Symbol;
 use crate::synth::samples::Samples;
 use crate::types::SampleType;
 use crate::units::Frequency;

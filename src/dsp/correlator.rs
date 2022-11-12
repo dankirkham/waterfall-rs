@@ -24,7 +24,12 @@ impl Correlator {
         let mut planner = FftPlanner::<FftNum>::new();
         let fft = planner.plan_fft_forward(size);
         let ifft = planner.plan_fft_inverse(size);
-        Self { input_size, fft, ifft, size }
+        Self {
+            input_size,
+            fft,
+            ifft,
+            size,
+        }
     }
 
     /// Round up input_size to the nearest power of two, for more speed.
@@ -129,15 +134,16 @@ impl Correlator {
 
         let r_iter = r_complex.into_iter().map(|c| c.re); // Use only real part
 
-        let (mut max, index) = r_iter
-            .enumerate()
-            .fold((-f32::INFINITY, 0), |(max, index), (cur_index, next)| {
-                if next > max {
-                    (next, cur_index)
-                } else {
-                    (max, index)
-                }
-            });
+        let (mut max, index) =
+            r_iter
+                .enumerate()
+                .fold((-f32::INFINITY, 0), |(max, index), (cur_index, next)| {
+                    if next > max {
+                        (next, cur_index)
+                    } else {
+                        (max, index)
+                    }
+                });
 
         max /= self.size as f32; // FFT normalize
 
