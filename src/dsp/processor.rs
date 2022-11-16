@@ -2,6 +2,7 @@ use egui::ColorImage;
 use tokio::sync::mpsc::{Receiver, Sender};
 
 use crate::configuration::Configuration;
+use crate::message::MessageSender;
 use crate::statistics::Statistics;
 use crate::types::SampleType;
 
@@ -19,9 +20,10 @@ impl Processor {
         receiver: Receiver<Vec<SampleType>>,
         sender: Sender<ColorImage>,
         plot_sender: Sender<Vec<SampleType>>,
+        message_sender: MessageSender,
         config: &Configuration,
     ) -> Self {
-        let rx = Rx::new(plot_sender, config);
+        let rx = Rx::new(plot_sender, message_sender, config);
         let wp = WaterfallProcessor::new(sender, config);
 
         Self { receiver, rx, wp }

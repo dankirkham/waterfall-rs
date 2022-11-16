@@ -1,6 +1,5 @@
 use std::cmp::Ordering;
 
-use realfft::RealToComplexOdd;
 use tokio::sync::mpsc::error::TrySendError;
 use tokio::sync::mpsc::Sender;
 use wasm_timer::Instant;
@@ -8,7 +7,7 @@ use wasm_timer::Instant;
 use crate::configuration::Configuration;
 use crate::dsp::aggregator::Aggregator;
 use crate::dsp::correlator::{Correlator, OperandData};
-use crate::dsp::ft8_rx::{Ft8Rx, Symbol as Ft8Symbol};
+use crate::message::{Ft8Message, MessageSender};
 use crate::statistics::Statistics;
 use crate::synth::ft8::SingleSymbol;
 use crate::synth::ft8::SyncSignal;
@@ -22,12 +21,20 @@ enum RxMode {
     MessageA(usize),
     Sync2,
     MessageB(usize),
+    Done,
 }
 
 impl RxMode {
     pub fn is_sync(&self) -> bool {
         match self {
             RxMode::Sync1 | RxMode::Sync2 => true,
+            _ => false,
+        }
+    }
+
+    pub fn is_done(&self) -> bool {
+        match self {
+            RxMode::Done => true,
             _ => false,
         }
     }
@@ -41,26 +48,24 @@ impl RxMode {
                 } else {
                     RxMode::MessageA(s - 1)
                 }
-            },
+            }
             RxMode::Sync2 => RxMode::MessageB(29),
             RxMode::MessageB(s) => {
                 if s == 0 {
-                    println!("We got a message.");
-                    RxMode::Sync1
+                    RxMode::Done
                 } else {
                     RxMode::MessageB(s - 1)
                 }
-            },
+            }
+            RxMode::Done => RxMode::Sync1,
         };
 
-        dbg!(&next);
         next
     }
 
     pub fn reset(self) -> Self {
         let next = RxMode::Sync1;
 
-        dbg!(&next);
         next
     }
 }
@@ -79,17 +84,19 @@ pub struct Rx {
     sync_aggregator: Aggregator,
     sample_rate: Frequency,
     plot_sender: Sender<Vec<SampleType>>,
+    message_sender: MessageSender,
     downsample_skip: usize,
-    ft8_rx: Ft8Rx,
     mode: RxMode,
     sync_data: OperandData,
 }
 
 impl Rx {
-    pub fn new(plot_sender: Sender<Vec<SampleType>>, config: &Configuration) -> Self {
+    pub fn new(
+        plot_sender: Sender<Vec<SampleType>>,
+        message_sender: MessageSender,
+        config: &Configuration,
+    ) -> Self {
         let mut symbols: Vec<OperandData> = Vec::with_capacity(8);
-
-        let ft8_rx = Ft8Rx::default();
 
         let sample_rate_raw = config.audio_sample_rate;
         let sample_rate = Frequency::Hertz(sample_rate_raw as f32);
@@ -140,8 +147,8 @@ impl Rx {
             sync_aggregator,
             sample_rate,
             plot_sender,
+            message_sender,
             downsample_skip,
-            ft8_rx,
             mode: RxMode::default(),
             sync_data,
         }
@@ -155,7 +162,11 @@ impl Rx {
     ) {
         let sample_rate = Frequency::Hertz(config.audio_sample_rate as f32);
         if sample_rate.value() != self.sample_rate.value() {
-            *self = Self::new(self.plot_sender.clone(), config);
+            *self = Self::new(
+                self.plot_sender.clone(),
+                self.message_sender.clone(),
+                config,
+            );
         }
 
         let (aggregator, other_aggregator) = match self.mode.is_sync() {
@@ -214,27 +225,28 @@ impl Rx {
             // Correlate
             if self.mode.is_sync() {
                 let input_size = self.sync_correlator.input_size();
-                let (value, position) = (0..signal.len()/2)
-                    .into_iter()
-                    .step_by(64)
-                    .fold((0., 0), |max, start| {
-                        let end = if start + input_size > signal.len() {
-                            signal.len()
-                        } else {
-                            start + input_size
-                        };
+                let (value, position) =
+                    (0..signal.len() / 2)
+                        .into_iter()
+                        .step_by(64)
+                        .fold((0., 0), |max, start| {
+                            let end = if start + input_size > signal.len() {
+                                signal.len()
+                            } else {
+                                start + input_size
+                            };
 
-                        let lhs = self.sync_correlator.prepare_lhs(&signal[start..end]);
-                        let (value, position) =
-                            self.sync_correlator
+                            let lhs = self.sync_correlator.prepare_lhs(&signal[start..end]);
+                            let (value, position) = self
+                                .sync_correlator
                                 .correlate_max_with_prepared(&lhs, &self.sync_data, true);
 
-                        if value > max.0 {
-                            (value, end)
-                        } else {
-                            max
-                        }
-                    });
+                            if value > max.0 {
+                                (value, end)
+                            } else {
+                                max
+                            }
+                        });
 
                 if value > 0.5 {
                     // Advance states and return data.
@@ -248,7 +260,7 @@ impl Rx {
                 println!("Max value of {} at {}", value, position);
             } else {
                 let lhs = self.correlator.prepare_lhs(&signal);
-                let symbol = self
+                let _symbol = self
                     .symbols
                     .iter()
                     .map(|syn| {
@@ -261,6 +273,18 @@ impl Rx {
                     .map(|(index, _)| index)
                     .unwrap();
                 self.mode = self.mode.advance();
+            }
+
+            if self.mode.is_done() {
+                println!("Message received");
+                let message = Box::new(Ft8Message::new());
+                if let Err(err) = self.message_sender.try_send(message) {
+                    match err {
+                        TrySendError::Full(_) => println!("Message receiver falling behind."),
+                        TrySendError::Closed(_) => (),
+                    }
+                }
+                self.mode.reset();
             }
 
             let elapsed = now.elapsed();

@@ -6,6 +6,7 @@ use wasm_timer::Instant;
 use crate::configuration::Configuration;
 use crate::dsp::Processor;
 use crate::input::{Audio, InputSource, Source, Synth};
+use crate::message::Message;
 use crate::scope::Scope;
 use crate::statistics::Statistics;
 use crate::types::SampleType;
@@ -37,10 +38,11 @@ impl App {
         let (image_tx, image_rx) = mpsc::channel::<ColorImage>(5);
         let (sample_tx, sample_rx) = mpsc::channel::<Vec<SampleType>>(1024);
         let (plot_tx, plot_rx) = mpsc::channel::<Vec<SampleType>>(5);
+        let (message_tx, _message_rx) = mpsc::channel::<Box<dyn Message>>(5);
 
         let config = Configuration::default();
 
-        let processor = Processor::new(sample_rx, image_tx, plot_tx, &config);
+        let processor = Processor::new(sample_rx, image_tx, plot_tx, message_tx, &config);
 
         let scope = Scope::new(plot_rx);
 

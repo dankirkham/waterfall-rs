@@ -1,4 +1,5 @@
 mod audio;
+mod instant_synth;
 mod synth;
 
 use tokio::sync::mpsc::Sender;
@@ -18,4 +19,5 @@ pub trait Source {
 }
 
 pub use audio::Audio;
+pub use instant_synth::InstantSynth;
 pub use synth::Synth;
