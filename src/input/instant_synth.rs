@@ -1,6 +1,5 @@
 use rand::{thread_rng, Rng};
 use tokio::sync::mpsc::Sender;
-use wasm_timer::Instant;
 
 use crate::configuration::Configuration;
 use crate::input::Source;
