@@ -12,15 +12,15 @@ mod tests {
 
     use waterfall_rs::configuration::Configuration;
     use waterfall_rs::dsp::rx::Rx;
+    use waterfall_rs::message::Message;
     use waterfall_rs::statistics::Statistics;
     use waterfall_rs::types::SampleType;
 
     #[bench]
     fn bench_rx(b: &mut Bencher) {
-        let (plot_tx, _plot_rx) = mpsc::channel::<Vec<SampleType>>(1);
         let config = Configuration::default();
         let mut statistics = Statistics::default();
-        let mut rx = Rx::new(plot_tx, &config);
+        let mut rx = Rx::new(&config);
 
         let mut rng = rand::thread_rng();
         let buffer_len = (config.audio_sample_rate as f32 / 6.25) as usize;

@@ -23,7 +23,10 @@ impl Processor {
         message_sender: MessageSender,
         config: &Configuration,
     ) -> Self {
-        let rx = Rx::new(plot_sender, message_sender, config);
+        let rx = Rx::new(config)
+            .with_plot_sender(plot_sender)
+            .with_message_sender(message_sender);
+
         let wp = WaterfallProcessor::new(sender, config);
 
         Self { receiver, rx, wp }
