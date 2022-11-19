@@ -14,8 +14,7 @@ fn test_ft8_receive() {
     let (sample_tx, mut sample_rx) = mpsc::channel::<Vec<SampleType>>(1024);
     let (message_tx, mut message_rx) = mpsc::channel::<Box<dyn Message>>(5);
 
-    let mut rx = Rx::new(&config)
-        .with_message_sender(message_tx);
+    let mut rx = Rx::new(&config).with_message_sender(message_tx);
     let mut synth = InstantSynth::new(sample_tx, &config);
 
     let mut stats = Statistics::default();

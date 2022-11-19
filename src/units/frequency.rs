@@ -1,7 +1,7 @@
 use std::fmt;
-use std::ops::{Add, AddAssign, Sub};
+use std::ops::{Add, AddAssign, Div, Sub};
 
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone, Debug, PartialEq)]
 pub enum Frequency {
     Hertz(f32),
     // Kilohertz(f32),
@@ -51,5 +51,29 @@ impl Sub for Frequency {
 
     fn sub(self, other: Self) -> Self {
         Self::Hertz(self.value() - other.value())
+    }
+}
+
+impl Div<Frequency> for Frequency {
+    type Output = f32;
+
+    fn div(self, rhs: Self) -> Self::Output {
+        self.value() / rhs.value()
+    }
+}
+
+impl Div<usize> for Frequency {
+    type Output = Frequency;
+
+    fn div(self, rhs: usize) -> Self::Output {
+        Self::Hertz(((self.value() as usize) / rhs) as f32)
+    }
+}
+
+impl Div<f32> for Frequency {
+    type Output = Frequency;
+
+    fn div(self, rhs: f32) -> Self::Output {
+        Self::Hertz((self.value() / rhs) as f32)
     }
 }

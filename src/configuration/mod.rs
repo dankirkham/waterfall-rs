@@ -1,8 +1,10 @@
+mod audio_sample_rate;
 mod scope_settings;
 mod tuner_settings;
 
 use crate::input::InputSource;
 use crate::units::Frequency;
+pub use audio_sample_rate::AudioSampleRate;
 pub use scope_settings::{AxisMode, ScopeMode, ScopeSettings, TriggerMode, TriggerSettings};
 pub use tuner_settings::{DecoderType, TunerSettings};
 
@@ -10,7 +12,7 @@ pub use tuner_settings::{DecoderType, TunerSettings};
 pub struct Configuration {
     pub input_source: InputSource,
     pub input_device: String,
-    pub audio_sample_rate: usize,
+    pub audio_sample_rate: AudioSampleRate,
     pub fft_depth: usize,
     pub min_db: f32,
     pub max_db: f32,
@@ -38,7 +40,7 @@ impl Default for Configuration {
         Self {
             input_source: InputSource::Synth,
             input_device: "Default".to_owned(),
-            audio_sample_rate: 48000,
+            audio_sample_rate: AudioSampleRate::F48000,
             fft_depth: 8192,
             min_db: -40.0,
             max_db: 0.0,
@@ -61,12 +63,16 @@ impl Configuration {
     }
 
     pub fn bin_hz(&self) -> f32 {
-        self.audio_sample_rate as f32 / self.fft_depth as f32
+        let f = self.audio_sample_rate.as_frequency() / self.fft_depth as f32;
+        f.value()
     }
 
     /// We can't do better than Nyquist.
     pub fn effective_trim_hz(&self) -> usize {
-        self.trim_hz.min(self.audio_sample_rate / 2)
+        let f = self.audio_sample_rate.as_frequency() / 2;
+        let best_possible = f.value() as usize;
+
+        self.trim_hz.min(best_possible)
     }
 
     pub fn effective_len(&self) -> usize {

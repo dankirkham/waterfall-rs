@@ -1,7 +1,7 @@
 mod conditioner;
-mod synchronizer;
-mod symbolizer;
 mod rx_mode;
+mod symbolizer;
+mod synchronizer;
 
 use tokio::sync::mpsc::error::TrySendError;
 use tokio::sync::mpsc::Sender;
@@ -9,10 +9,10 @@ use wasm_timer::Instant;
 
 use conditioner::Conditioner;
 use rx_mode::RxMode;
-use synchronizer::Synchronizer;
 use symbolizer::Symbolizer;
+use synchronizer::Synchronizer;
 
-use crate::configuration::Configuration;
+use crate::configuration::{AudioSampleRate, Configuration};
 use crate::dsp::aggregator::Aggregator;
 use crate::message::{Ft8Message, MessageSender};
 use crate::statistics::Statistics;
@@ -24,10 +24,10 @@ pub struct Rx {
     message_sender: Option<MessageSender>,
     mode: RxMode,
 
+    sample_rate: AudioSampleRate,
+
     aggregator: Aggregator,
     sync_aggregator: Aggregator,
-    sample_rate: Frequency,
-    downsample_skip: usize,
     conditioner: Conditioner,
     synchronizer: Synchronizer,
     symbolizer: Symbolizer,
@@ -35,32 +35,20 @@ pub struct Rx {
 
 impl Rx {
     pub fn new(config: &Configuration) -> Self {
-        let sample_rate_raw = config.audio_sample_rate;
-        let sample_rate = Frequency::Hertz(sample_rate_raw as f32);
-        let baseband_sample_rate = match sample_rate_raw {
-            8000 => Frequency::Hertz(100.0),
-            16000 => Frequency::Hertz(100.0),
-            22050 => Frequency::Hertz(105.0),
-            44100 => Frequency::Hertz(100.0),
-            48000 => Frequency::Hertz(1000.0),
-            96000 => Frequency::Hertz(100.0),
-            _ => sample_rate,
-        };
+        let sample_rate = config.audio_sample_rate;
 
-        let downsample_skip: usize = sample_rate_raw / (baseband_sample_rate.value() as usize);
-        let conditioner = Conditioner::new()
-            .with_downsample_skip(downsample_skip);
+        let conditioner = Conditioner::new();
 
-        let aggregator_len = (sample_rate.value() / 6.25) as usize;
+        let deviation = Frequency::Hertz(6.25);
+        let aggregator_len = (sample_rate.as_frequency() / deviation) as usize;
         let aggregator = Aggregator::new(aggregator_len);
         let sync_aggregator = Aggregator::new(aggregator_len * 7 * 2);
 
-        let buffer_len = (baseband_sample_rate.value() / 6.25) as usize;
+        let buffer_len = (sample_rate.baseband_sample_rate() / deviation) as usize;
 
-        let synchronizer = Synchronizer::new(buffer_len, baseband_sample_rate)
-            .with_downsample_skip(downsample_skip);
+        let synchronizer = Synchronizer::new(buffer_len, sample_rate);
 
-        let symbolizer = Symbolizer::new(buffer_len, baseband_sample_rate);
+        let symbolizer = Symbolizer::new(buffer_len, sample_rate);
 
         Self {
             aggregator,
@@ -68,7 +56,6 @@ impl Rx {
             sample_rate,
             plot_sender: None,
             message_sender: None,
-            downsample_skip,
             mode: RxMode::default(),
             conditioner,
             synchronizer,
@@ -92,8 +79,9 @@ impl Rx {
         config: &Configuration,
         stats: &mut Statistics,
     ) {
-        let sample_rate = Frequency::Hertz(config.audio_sample_rate as f32);
-        if sample_rate.value() != self.sample_rate.value() {
+        let sample_rate = config.audio_sample_rate;
+        if sample_rate != self.sample_rate {
+            // I HATE THIS
             let plot_sender = self.plot_sender.clone();
             let message_sender = self.message_sender.clone();
             let mut rx = Self::new(config);

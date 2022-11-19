@@ -1,10 +1,11 @@
 use std::cmp::Ordering;
 
+use crate::configuration::AudioSampleRate;
 use crate::dsp::correlator::{Correlator, OperandData};
-use crate::units::Frequency;
 use crate::synth::ft8::SingleSymbol;
-use crate::types::SampleType;
 use crate::synth::Samples;
+use crate::types::SampleType;
+use crate::units::Frequency;
 
 pub struct Symbolizer {
     symbols: Vec<OperandData>,
@@ -12,15 +13,19 @@ pub struct Symbolizer {
 }
 
 impl Symbolizer {
-    pub fn new(buffer_len: usize, baseband_sample_rate: Frequency) -> Self {
+    pub fn new(buffer_len: usize, sample_rate: AudioSampleRate) -> Self {
         let correlator = Correlator::with_pow2_len(buffer_len);
 
         let carrier = Frequency::Hertz(0.0);
         let mut symbols: Vec<OperandData> = Vec::with_capacity(8);
 
         for symbol in 0..8 {
-            let mut gen =
-                SingleSymbol::with_amplitude(baseband_sample_rate, carrier, symbol as f32, 1.0);
+            let mut gen = SingleSymbol::with_amplitude(
+                sample_rate.baseband_sample_rate(),
+                carrier,
+                symbol as f32,
+                1.0,
+            );
 
             // let len: usize =
             //     (sample_rate.value() / (carrier.value() + (symbol as f32) * 6.25)) as usize;

@@ -3,7 +3,7 @@ use cpal::Stream;
 use tokio::sync::mpsc::error::TrySendError;
 use tokio::sync::mpsc::Sender;
 
-use crate::configuration::Configuration;
+use crate::configuration::{AudioSampleRate, Configuration};
 use crate::filter::Filter;
 use crate::filter::HighPassFilter;
 use crate::input::Source;
@@ -14,7 +14,7 @@ pub struct Audio {
     sender: Sender<Vec<SampleType>>,
     stream: Stream,
 
-    sample_rate: usize,
+    sample_rate: AudioSampleRate,
     device_name: String,
 }
 
@@ -30,7 +30,6 @@ impl Audio {
 
     pub fn new(sender: Sender<Vec<SampleType>>, config: &Configuration) -> Self {
         let sample_rate = config.audio_sample_rate;
-        let sample_rate_f = Frequency::Hertz(sample_rate as f32);
 
         let host = cpal::default_host();
 
@@ -60,7 +59,7 @@ impl Audio {
             // react to errors here.
         };
 
-        let mut filter = HighPassFilter::from_frequency(Frequency::Hertz(300.0), sample_rate_f);
+        let mut filter = HighPassFilter::from_frequency(Frequency::Hertz(300.0), sample_rate.as_frequency());
 
         let stream_sender = sender.clone();
         let stream = match config.channels() {

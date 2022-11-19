@@ -15,6 +15,7 @@ mod tests {
     use waterfall_rs::message::Message;
     use waterfall_rs::statistics::Statistics;
     use waterfall_rs::types::SampleType;
+    use waterfall_rs::units::Frequency;
 
     #[bench]
     fn bench_rx(b: &mut Bencher) {
@@ -23,7 +24,8 @@ mod tests {
         let mut rx = Rx::new(&config);
 
         let mut rng = rand::thread_rng();
-        let buffer_len = (config.audio_sample_rate as f32 / 6.25) as usize;
+        let deviation = Frequency::Hertz(6.25);
+        let buffer_len = (config.audio_sample_rate.as_frequency() / deviation) as usize;
         let mut signal: Vec<SampleType> = Vec::with_capacity(buffer_len);
         for _ in 0..(buffer_len + 1) {
             signal.push(rng.gen_range(0.0..2.0_f32.powf(16.0)));
