@@ -59,7 +59,8 @@ impl Audio {
             // react to errors here.
         };
 
-        let mut filter = HighPassFilter::from_frequency(Frequency::Hertz(300.0), sample_rate.as_frequency());
+        let mut filter =
+            HighPassFilter::from_frequency(Frequency::Hertz(300.0), sample_rate.as_frequency());
 
         let stream_sender = sender.clone();
         let stream = match config.channels() {

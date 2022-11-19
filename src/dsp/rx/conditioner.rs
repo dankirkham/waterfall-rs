@@ -18,7 +18,7 @@ impl Conditioner {
         let mut bpf = BandPassFilter::from_frequency(
             config.tuner.lower_absolute(), // Low
             config.tuner.upper_absolute(), // High
-            sample_rate.into(),                   // SampleRate
+            sample_rate.into(),            // SampleRate
         );
         let bandpassed = samples.iter().map(|sample| bpf.next(*sample));
 

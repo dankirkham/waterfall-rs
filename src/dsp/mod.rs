@@ -1,6 +1,5 @@
 mod aggregator;
 pub mod correlator;
-mod ft8_rx;
 mod processor;
 pub mod rx;
 mod turbo;

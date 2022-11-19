@@ -1,7 +1,7 @@
 use egui::*;
 
-use crate::configuration::{AudioSampleRate, Configuration};
 use crate::configuration::DecoderType;
+use crate::configuration::{AudioSampleRate, Configuration};
 use crate::input::InputSource;
 use crate::ui::bump::Bump;
 
@@ -52,12 +52,36 @@ impl<'a> Settings<'a> {
             egui::ComboBox::from_label("Sample Rate")
                 .selected_text(format!("{}", self.config.audio_sample_rate))
                 .show_ui(ui, |ui| {
-                    ui.selectable_value(&mut self.config.audio_sample_rate, AudioSampleRate::F8000, AudioSampleRate::F8000.to_string());
-                    ui.selectable_value(&mut self.config.audio_sample_rate, AudioSampleRate::F16000, AudioSampleRate::F16000.to_string());
-                    ui.selectable_value(&mut self.config.audio_sample_rate, AudioSampleRate::F22050, AudioSampleRate::F22050.to_string());
-                    ui.selectable_value(&mut self.config.audio_sample_rate, AudioSampleRate::F44100, AudioSampleRate::F44100.to_string());
-                    ui.selectable_value(&mut self.config.audio_sample_rate, AudioSampleRate::F48000, AudioSampleRate::F48000.to_string());
-                    ui.selectable_value(&mut self.config.audio_sample_rate, AudioSampleRate::F96000, AudioSampleRate::F96000.to_string());
+                    ui.selectable_value(
+                        &mut self.config.audio_sample_rate,
+                        AudioSampleRate::F8000,
+                        AudioSampleRate::F8000.to_string(),
+                    );
+                    ui.selectable_value(
+                        &mut self.config.audio_sample_rate,
+                        AudioSampleRate::F16000,
+                        AudioSampleRate::F16000.to_string(),
+                    );
+                    ui.selectable_value(
+                        &mut self.config.audio_sample_rate,
+                        AudioSampleRate::F22050,
+                        AudioSampleRate::F22050.to_string(),
+                    );
+                    ui.selectable_value(
+                        &mut self.config.audio_sample_rate,
+                        AudioSampleRate::F44100,
+                        AudioSampleRate::F44100.to_string(),
+                    );
+                    ui.selectable_value(
+                        &mut self.config.audio_sample_rate,
+                        AudioSampleRate::F48000,
+                        AudioSampleRate::F48000.to_string(),
+                    );
+                    ui.selectable_value(
+                        &mut self.config.audio_sample_rate,
+                        AudioSampleRate::F96000,
+                        AudioSampleRate::F96000.to_string(),
+                    );
                 });
 
             ui.separator();
