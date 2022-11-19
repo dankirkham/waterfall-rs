@@ -49,8 +49,8 @@ impl Synchronizer {
                     }
                 });
 
-        println!("Max value of {} at {}", value, position);
-        if value > 0.5 {
+        // println!("Max value of {} at {}", value, position);
+        if value > 0.2 {
             Some(position * self.sample_rate.samples_to_skip())
         } else {
             None

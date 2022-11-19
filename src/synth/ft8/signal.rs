@@ -11,6 +11,7 @@ enum MessageState {
     Sync2,
     MessageB,
     Sync3,
+    Done,
 }
 
 impl MessageState {
@@ -21,7 +22,8 @@ impl MessageState {
             MessageState::MessageA => MessageState::Sync2,
             MessageState::Sync2 => MessageState::MessageB,
             MessageState::MessageB => MessageState::Sync3,
-            MessageState::Sync3 => MessageState::Sync1,
+            MessageState::Sync3 => MessageState::Done,
+            MessageState::Done => MessageState::Done,
         }
     }
 
@@ -33,6 +35,14 @@ impl MessageState {
             MessageState::Sync1 => false,
             MessageState::Sync2 => false,
             MessageState::Sync3 => false,
+            MessageState::Done => false,
+        }
+    }
+
+    pub fn is_done(&self) -> bool {
+        match *self {
+            MessageState::Done => true,
+            _ => false,
         }
     }
 }
@@ -95,6 +105,10 @@ impl Samples for Ft8 {
 
         self.sample -= 1;
 
-        self.synth.next()
+        if self.state.is_done() {
+            0.
+        } else {
+            self.synth.next()
+        }
     }
 }

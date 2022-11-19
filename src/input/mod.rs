@@ -19,5 +19,5 @@ pub trait Source {
 }
 
 pub use audio::Audio;
-pub use instant_synth::InstantSynth;
+pub use instant_synth::{InstantSynth, InstantSynthBuilder};
 pub use synth::Synth;

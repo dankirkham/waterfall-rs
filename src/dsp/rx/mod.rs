@@ -133,7 +133,6 @@ impl Rx {
             }
 
             if self.mode.is_done() {
-                println!("Message received");
                 let message = Box::new(Ft8Message::new());
                 if let Some(sender) = &self.message_sender {
                     if let Err(err) = sender.try_send(message) {

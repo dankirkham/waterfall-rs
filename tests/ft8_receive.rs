@@ -2,7 +2,7 @@ use tokio::sync::mpsc;
 
 use waterfall_rs::configuration::Configuration;
 use waterfall_rs::dsp::rx::Rx;
-use waterfall_rs::input::{InstantSynth, Source};
+use waterfall_rs::input::{InstantSynthBuilder, Source};
 use waterfall_rs::message::Message;
 use waterfall_rs::statistics::Statistics;
 use waterfall_rs::types::SampleType;
@@ -15,7 +15,10 @@ fn test_ft8_receive() {
     let (message_tx, mut message_rx) = mpsc::channel::<Box<dyn Message>>(5);
 
     let mut rx = Rx::new(&config).with_message_sender(message_tx);
-    let mut synth = InstantSynth::new(sample_tx, &config);
+    let mut synth = InstantSynthBuilder::new(sample_tx, config.audio_sample_rate)
+        .with_noise(0.)
+        .with_delay(7127)
+        .build();
 
     let mut stats = Statistics::default();
 

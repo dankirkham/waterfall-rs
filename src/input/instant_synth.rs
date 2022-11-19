@@ -8,43 +8,85 @@ use crate::synth::Samples;
 use crate::types::SampleType;
 use crate::units::Frequency;
 
-pub struct InstantSynth {
-    sender: Sender<Vec<SampleType>>,
-    // config: Arc<RwLock<Configuration>>,
+pub struct InstantSynthBuilder {
     sample_rate: AudioSampleRate,
-    signal: Ft8,
+    sender: Sender<Vec<SampleType>>,
+    samples_per_run: usize,
+    delay: usize,
+    noise: f32,
 }
 
-impl InstantSynth {
-    pub fn new(sender: Sender<Vec<SampleType>>, config: &Configuration) -> Self {
-        let sample_rate = config.audio_sample_rate;
-        let carrier = Frequency::Hertz(2500.0);
-        let signal = Ft8::new(sample_rate.as_frequency(), carrier);
-
+impl InstantSynthBuilder {
+    pub fn new(sender: Sender<Vec<SampleType>>, sample_rate: AudioSampleRate) -> Self {
         Self {
             sender,
             sample_rate,
+            samples_per_run: 1024,
+            delay: 0,
+            noise: 0.001,
+        }
+    }
+
+    pub fn with_delay(mut self, delay: usize) -> Self {
+        self.delay = delay;
+        self
+    }
+
+    pub fn with_noise(mut self, noise: f32) -> Self {
+        self.noise = noise;
+        self
+    }
+
+    pub fn build(self) -> InstantSynth {
+        let carrier = Frequency::Hertz(2500.0);
+        let signal = Ft8::new(self.sample_rate.as_frequency(), carrier);
+
+        InstantSynth {
             signal,
+            sender: self.sender,
+            samples_per_run: self.samples_per_run,
+            delay: self.delay,
+            noise: self.noise,
         }
     }
 }
 
+pub struct InstantSynth {
+    sender: Sender<Vec<SampleType>>,
+    signal: Ft8,
+    samples_per_run: usize,
+    delay: usize,
+    noise: f32,
+}
+
 impl Source for InstantSynth {
     fn run(&mut self, config: &Configuration) {
-        let sample_rate = config.audio_sample_rate;
-        if sample_rate != self.sample_rate {
-            self.sample_rate = sample_rate;
-            let carrier = Frequency::Hertz(2500.0);
-            self.signal = Ft8::new(sample_rate.as_frequency(), carrier);
-        }
-
-        let new_samples = 1024;
         let mut rng = thread_rng();
 
-        let mut samples: Vec<SampleType> = Vec::with_capacity(new_samples);
-        (0..new_samples).into_iter().for_each(|_| {
+        let (noise_samples, signal_samples) = if self.delay > 0 {
+            if self.delay >= self.samples_per_run {
+                self.delay -= self.samples_per_run;
+                (self.samples_per_run, 0)
+            } else {
+                let delay = self.delay;
+                self.delay = 0;
+                (delay, self.samples_per_run - delay)
+            }
+        } else {
+            (0, self.samples_per_run)
+        };
+
+        let mut samples: Vec<SampleType> = Vec::with_capacity(self.samples_per_run);
+
+        (0..noise_samples).into_iter().for_each(|_| {
             let r: f32 = rng.gen();
-            let noise: f32 = 0.001 * r;
+            let noise: f32 = self.noise * r;
+            samples.push(noise);
+        });
+
+        (0..signal_samples).into_iter().for_each(|_| {
+            let r: f32 = rng.gen();
+            let noise: f32 = self.noise * r;
             samples.push(noise + self.signal.next());
         });
 

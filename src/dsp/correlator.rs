@@ -35,7 +35,7 @@ impl Correlator {
     /// Round up input_size to the nearest power of two, for more speed.
     pub fn with_pow2_len(input_size: usize) -> Self {
         let pow2_input_size = 2_f32.powf((input_size as f32).log2().ceil()) as usize;
-        println!("Using {} for {} input size", pow2_input_size, input_size);
+        // println!("Using {} for {} input size", pow2_input_size, input_size);
         Self::new(pow2_input_size)
     }
 
