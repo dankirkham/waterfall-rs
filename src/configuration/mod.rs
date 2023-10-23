@@ -44,7 +44,7 @@ impl Default for Configuration {
             fft_depth: 8192,
             min_db: -40.0,
             max_db: 0.0,
-            trim_hz: 4000,
+            trim_hz: 8000,
             zoom: 1.0,
             scroll: 0.0,
             tuner: TunerSettings::default(),

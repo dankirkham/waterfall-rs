@@ -1,6 +1,8 @@
 use std::fmt;
-use std::ops::{Add, AddAssign, Sub};
+use std::ops::{Add, AddAssign, Div, Mul, Sub};
 use std::time::Duration;
+
+use super::Frequency;
 
 #[derive(Copy, Clone, Debug)]
 pub enum Time {
@@ -56,6 +58,12 @@ impl Time {
     }
 }
 
+impl From<Frequency> for Time {
+    fn from(f: Frequency) -> Self {
+        Self::Seconds(1.0 / f.value())
+    }
+}
+
 impl Add for Time {
     type Output = Self;
 
@@ -67,6 +75,22 @@ impl Add for Time {
 impl AddAssign for Time {
     fn add_assign(&mut self, other: Self) {
         *self = Self::Seconds(self.value() + other.value())
+    }
+}
+
+impl Div<Frequency> for Time {
+    type Output = f32;
+
+    fn div(self, rhs: Frequency) -> Self::Output {
+        self.value() / Time::from(rhs).value()
+    }
+}
+
+impl Mul<Frequency> for Time {
+    type Output = f32;
+
+    fn mul(self, rhs: Frequency) -> Self::Output {
+        self.value() * Time::from(rhs).value()
     }
 }
 

@@ -1,5 +1,7 @@
 use std::fmt;
-use std::ops::{Add, AddAssign, Div, Sub};
+use std::ops::{Add, AddAssign, Div, Sub, Mul};
+
+use crate::units::Time;
 
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub enum Frequency {
@@ -51,6 +53,22 @@ impl Sub for Frequency {
 
     fn sub(self, other: Self) -> Self {
         Self::Hertz(self.value() - other.value())
+    }
+}
+
+impl Div<Time> for Frequency {
+    type Output = f32;
+
+    fn div(self, rhs: Time) -> Self::Output {
+        Time::from(self).value() / rhs.value()
+    }
+}
+
+impl Mul<Time> for Frequency {
+    type Output = f32;
+
+    fn mul(self, rhs: Time) -> Self::Output {
+        Time::from(self).value() * rhs.value()
     }
 }
 

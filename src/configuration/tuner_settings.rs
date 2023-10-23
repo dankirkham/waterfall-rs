@@ -17,8 +17,8 @@ impl Default for TunerSettings {
     fn default() -> Self {
         TunerSettings {
             lower: 0.0,
-            upper: 50.0,
-            carrier: 2500.0,
+            upper: 6000.0,
+            carrier: 0.0,
             decoder: DecoderType::Ft8,
         }
     }

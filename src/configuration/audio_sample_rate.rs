@@ -38,7 +38,7 @@ impl AudioSampleRate {
             AudioSampleRate::F16000 => Frequency::Hertz(100.0),
             AudioSampleRate::F22050 => Frequency::Hertz(105.0),
             AudioSampleRate::F44100 => Frequency::Hertz(100.0),
-            AudioSampleRate::F48000 => Frequency::Hertz(1000.0),
+            AudioSampleRate::F48000 => Frequency::Hertz(12000.0),
             AudioSampleRate::F96000 => Frequency::Hertz(100.0),
         }
     }

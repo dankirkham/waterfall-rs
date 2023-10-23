@@ -8,7 +8,6 @@ use tokio::sync::mpsc::Sender;
 use wasm_timer::Instant;
 
 use conditioner::Conditioner;
-use rx_mode::RxMode;
 use symbolizer::Symbolizer;
 use synchronizer::Synchronizer;
 
@@ -17,17 +16,15 @@ use crate::dsp::aggregator::Aggregator;
 use crate::message::{Ft8Message, MessageSender};
 use crate::statistics::Statistics;
 use crate::types::SampleType;
-use crate::units::Frequency;
+use crate::units::{Frequency, Time};
 
 pub struct Rx {
     plot_sender: Option<Sender<Vec<SampleType>>>,
     message_sender: Option<MessageSender>,
-    mode: RxMode,
 
     sample_rate: AudioSampleRate,
 
     aggregator: Aggregator,
-    sync_aggregator: Aggregator,
     conditioner: Conditioner,
     synchronizer: Synchronizer,
     symbolizer: Symbolizer,
@@ -40,23 +37,20 @@ impl Rx {
         let conditioner = Conditioner::new();
 
         let deviation = Frequency::Hertz(6.25);
-        let aggregator_len = (sample_rate.as_frequency() / deviation) as usize;
+        let aggregator_len = (Time::Seconds(15.0) / sample_rate.as_frequency()) as usize;
         let aggregator = Aggregator::new(aggregator_len);
-        let sync_aggregator = Aggregator::new(aggregator_len * 7 * 2);
 
         let buffer_len = (sample_rate.baseband_sample_rate() / deviation) as usize;
 
-        let synchronizer = Synchronizer::new(buffer_len, sample_rate);
+        let synchronizer = Synchronizer::new(sample_rate);
 
         let symbolizer = Symbolizer::new(buffer_len, sample_rate);
 
         Self {
             aggregator,
-            sync_aggregator,
             sample_rate,
             plot_sender: None,
             message_sender: None,
-            mode: RxMode::default(),
             conditioner,
             synchronizer,
             symbolizer,
@@ -97,13 +91,9 @@ impl Rx {
             *self = rx;
         }
 
-        let (aggregator, other_aggregator) = match self.mode.is_sync() {
-            true => (&mut self.sync_aggregator, &mut self.aggregator),
-            false => (&mut self.aggregator, &mut self.sync_aggregator),
-        };
-        aggregator.aggregate(new_samples);
+        self.aggregator.aggregate(new_samples);
 
-        while let Some(mut samples) = aggregator.get_slice() {
+        while let Some(mut samples) = self.aggregator.get_slice() {
             let now = Instant::now();
 
             let signal = self.conditioner.condition(&config, &samples);
@@ -117,33 +107,27 @@ impl Rx {
                 }
             }
 
-            // Correlate
-            if self.mode.is_sync() {
-                if let Some(samples_to_skip) = self.synchronizer.synchronize(signal) {
-                    let return_samples = samples.split_off(samples_to_skip);
-                    aggregator.return_slice(return_samples);
-                    other_aggregator.take_data(aggregator);
-                    self.mode = self.mode.advance();
-                } else {
-                    self.mode = self.mode.reset();
-                }
-            } else {
-                let _symbol = self.symbolizer.symbolize(signal);
-                self.mode = self.mode.advance();
-            }
+            self.synchronizer.synchronize(signal);
 
-            if self.mode.is_done() {
-                let message = Box::new(Ft8Message::new());
-                if let Some(sender) = &self.message_sender {
-                    if let Err(err) = sender.try_send(message) {
-                        match err {
-                            TrySendError::Full(_) => println!("Message receiver falling behind."),
-                            TrySendError::Closed(_) => (),
-                        }
-                    }
-                }
-                self.mode.reset();
-            }
+            // Correlate
+            // if self.mode.is_sync() {
+            // } else {
+            //     let _symbol = self.symbolizer.symbolize(signal);
+            //     self.mode = self.mode.advance();
+            // }
+
+            // if self.mode.is_done() {
+            //     let message = Box::new(Ft8Message::new());
+            //     if let Some(sender) = &self.message_sender {
+            //         if let Err(err) = sender.try_send(message) {
+            //             match err {
+            //                 TrySendError::Full(_) => println!("Message receiver falling behind."),
+            //                 TrySendError::Closed(_) => (),
+            //             }
+            //         }
+            //     }
+            //     self.mode.reset();
+            // }
 
             let elapsed = now.elapsed();
             stats.rx.push(elapsed);
