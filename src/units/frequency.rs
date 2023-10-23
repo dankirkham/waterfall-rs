@@ -1,5 +1,5 @@
 use std::fmt;
-use std::ops::{Add, AddAssign, Div, Sub, Mul};
+use std::ops::{Add, AddAssign, Div, Mul, Sub};
 
 use crate::units::Time;
 

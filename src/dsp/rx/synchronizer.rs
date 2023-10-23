@@ -1,154 +1,199 @@
-use std::sync::Arc;
 use std::cmp::Ordering;
+use std::sync::Arc;
 
 use realfft::RealFftPlanner;
 use realfft::RealToComplex;
 
 use crate::configuration::AudioSampleRate;
 use crate::types::SampleType;
-use crate::units::Time;
+use crate::units::{Frequency, Time};
+use crate::dsp::fft::Fft;
 
 /// Performs coarse synchronization per "Synchronization in FT8" by Mike
 /// Hasselbeck, WB2FKO
 pub struct Synchronizer {
-    fft: Arc<dyn RealToComplex<f32>>,
-    fft_depth: usize,
-    bin_hz: f32,
+    fft_coarse: Fft,
+
+    // fft_fine: Arc<dyn RealToComplex<f32>>,
+
 }
+
+#[derive(Debug)]
+struct Candidate {
+    time: Time,
+    frequency: Frequency,
+    strength: f32,
+}
+
+impl Candidate {
+    pub fn normalized(mut self, norm_value: f32) -> Self {
+        self.strength = self.strength / norm_value;
+        self
+    }
+}
+
+impl PartialOrd for Candidate {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
+impl Ord for Candidate {
+    fn cmp(&self, other: &Self) -> Ordering {
+        if other.strength > self.strength {
+            Ordering::Greater
+        } else if other.strength < self.strength {
+            Ordering::Less
+        } else {
+            Ordering::Equal
+        }
+    }
+}
+
+impl PartialEq for Candidate {
+    fn eq(&self, other: &Self) -> bool {
+        self.strength == other.strength
+    }
+}
+
+impl Eq for Candidate { }
 
 impl Synchronizer {
     pub fn new(sample_rate: AudioSampleRate) -> Self {
-        let mut planner = RealFftPlanner::<f32>::new();
-
-        // let fft_depth = (Time::Seconds(0.320) / sample_rate.baseband_sample_rate()) as usize;
-        let fft_depth = (Time::Seconds(0.160) / sample_rate.baseband_sample_rate()) as usize;
-
-        let fft = planner.plan_fft_forward(fft_depth as usize); // Hasselbeck, pg. 6
-        let bin_hz = sample_rate.baseband_sample_rate().value() / fft_depth as f32;
+        let fft_coarse = Fft::new(Time::Seconds(0.160), sample_rate.baseband_sample_rate());
 
         Self {
-            fft,
-            fft_depth,
-            bin_hz,
+            fft_coarse,
         }
     }
 
-    pub fn synchronize(&self, signal: Vec<SampleType>) -> Option<usize> {
+    fn coarse_sync(&self, signal: &[SampleType]) -> Vec<Candidate> {
         // Calculate 372 individual spectra of input signal.
         // Each 160 ms time windows, offset by 1/4 symbol or 40 ms.
-        let spectra: Vec<_> = (0..372).map(|i| {
-            let mut samples = Vec::with_capacity(self.fft_depth);
+        let spectra: Vec<_> = (0..372)
+            .map(|i| {
+                let mut samples = Vec::with_capacity(self.fft_coarse.depth);
 
-            // let quarter_symbol = self.fft_depth / 8;
-            // let begin = i * quarter_symbol;
-            // let end = begin + self.fft_depth / 2;
-            // samples.extend_from_slice(&signal[begin..end]);
-            // samples.extend(vec![0.0; self.fft_depth / 2]);
+                let quarter_symbol = self.fft_coarse.depth / 4;
+                let begin = i * quarter_symbol;
+                let end = begin + self.fft_coarse.depth;
+                samples.extend_from_slice(&signal[begin..end]);
 
-            let quarter_symbol = self.fft_depth / 4;
-            let begin = i * quarter_symbol;
-            let end = begin + self.fft_depth;
-            samples.extend_from_slice(&signal[begin..end]);
-
-            let mut spectrum = self.fft.make_output_vec();
-            self.fft.process(&mut samples, &mut spectrum).unwrap();
-            let spectrum: Vec<_> = spectrum.into_iter().map(|c| c.norm()).collect();
-            spectrum
-        }).collect();
-
-        // Scan for Costas array in 125 start times
-        let pairs = (0..125).map(|t| {
-            // (0..176).map(move |f| {
-            (80..800).map(move |f| {
-                (t, f)
+                self.fft_coarse.run(samples)
             })
-        }).flatten();
+            .collect();
 
-        let mut candidates: Vec<_> = pairs.map(|(t, f)| {
-            let t_a =
-                &spectra[t + 00][f + (18.75 / self.bin_hz) as usize] +
-                &spectra[t + 04][f + (06.25 / self.bin_hz) as usize] +
-                &spectra[t + 08][f + (25.00 / self.bin_hz) as usize] +
-                &spectra[t + 12][f + (00.00 / self.bin_hz) as usize] +
-                &spectra[t + 16][f + (37.50 / self.bin_hz) as usize] +
-                &spectra[t + 20][f + (31.25 / self.bin_hz) as usize] +
-                &spectra[t + 24][f + (12.50 / self.bin_hz) as usize];
+        // Scan for Costas array
+        // - 125 start times (-2 seconds to 3 seconds)
+        // - 737 frequency offsets (200 Hz to 2500 Hz)
+        let pairs = (0..125)
+            .map(|t| {
+                (64..=800).map(move |f| (t as i64 - 50, f))
+            })
+            .flatten();
 
-            let t_0a =
-                &spectra[t + 00][0] +
-                &spectra[t + 00][1] +
-                &spectra[t + 00][2] +
-                &spectra[t + 00][3] +
-                &spectra[t + 00][4] +
-                &spectra[t + 00][5] +
-                &spectra[t + 00][6] +
+        let mut candidates: Vec<_> = pairs
+            .map(|(t, f)| {
+                let t_a = t_n(&spectra, f, t);
+                let t_0a = t_0n(&spectra, t);
 
-                &spectra[t + 04][0] +
-                &spectra[t + 04][1] +
-                &spectra[t + 04][2] +
-                &spectra[t + 04][3] +
-                &spectra[t + 04][4] +
-                &spectra[t + 04][5] +
-                &spectra[t + 04][6] +
+                let t_b = t_n(&spectra, f, t + 143);
+                let t_0b = t_0n(&spectra, t + 143);
 
-                &spectra[t + 08][0] +
-                &spectra[t + 08][1] +
-                &spectra[t + 08][2] +
-                &spectra[t + 08][3] +
-                &spectra[t + 08][4] +
-                &spectra[t + 08][5] +
-                &spectra[t + 08][6] +
+                let t_c = t_n(&spectra, f, t + 227);
+                let t_0c = t_0n(&spectra, t + 227);
 
-                &spectra[t + 12][0] +
-                &spectra[t + 12][1] +
-                &spectra[t + 12][2] +
-                &spectra[t + 12][3] +
-                &spectra[t + 12][4] +
-                &spectra[t + 12][5] +
-                &spectra[t + 12][6] +
+                let s_abc = {
+                    let t = t_a + t_b + t_c;
+                    let t_n = (t_0a + t_0b + t_0c - t_a - t_b - t_c) / 6.0;
 
-                &spectra[t + 16][0] +
-                &spectra[t + 16][1] +
-                &spectra[t + 16][2] +
-                &spectra[t + 16][3] +
-                &spectra[t + 16][4] +
-                &spectra[t + 16][5] +
-                &spectra[t + 16][6] +
+                    t / t_n
+                };
 
-                &spectra[t + 20][0] +
-                &spectra[t + 20][1] +
-                &spectra[t + 20][2] +
-                &spectra[t + 20][3] +
-                &spectra[t + 20][4] +
-                &spectra[t + 20][5] +
-                &spectra[t + 20][6] +
+                let s_bc = {
+                    let t = t_b + t_c;
+                    let t_n = (t_0b + t_0c - t_b - t_c) / 4.0;
 
-                &spectra[t + 24][0] +
-                &spectra[t + 24][1] +
-                &spectra[t + 24][2] +
-                &spectra[t + 24][3] +
-                &spectra[t + 24][4] +
-                &spectra[t + 24][5] +
-                &spectra[t + 24][6];
+                    t / t_n
+                };
 
-            (t as f32 * 0.40, f as f32 * self.bin_hz, t_a / t_0a)
-        })
+                let strength = f32::max(s_abc, s_bc);
+
+                Candidate {
+                    frequency: self.fft_coarse.bin_to_frequency(f),
+                    time: Time::Seconds(t as f32 * 0.040),
+                    strength,
+                }
+            })
             .collect::<Vec<_>>();
 
-        candidates
-            .sort_by(|&a, &b| if a.2 < b.2 {
-                Ordering::Greater
-            } else {
-                Ordering::Less
-            });
+        candidates.sort();
+
+        let midpoint = (candidates.len() as f32 / 2.0).ceil() as usize;
+        let norm_value = candidates[midpoint].strength;
 
         let candidates: Vec<_> = candidates
             .into_iter()
-            .take(10)
+            .map(|c| c.normalized(norm_value))
+            .filter(|c| c.strength >= 1.5)
+            .take(200)
             .collect();
 
+        let candidates: Vec<_> = candidates
+            .into_iter()
+            .take(1)
+            .collect();
+
+        candidates
+    }
+
+    fn process_candidates(&self, signal: &[SampleType], candidates: &[Candidate]) -> () {
+    }
+
+    pub fn synchronize(&self, signal: &[SampleType]) -> Option<usize> {
+        let candidates = self.coarse_sync(&signal);
         dbg!(candidates);
 
         None
     }
+}
+
+fn t_n(spectra: &[Vec<f32>], f:usize, t: i64) -> f32 {
+    if t < 0 {
+        return 0.0
+    }
+    let t = t as usize;
+
+    &spectra[t + 00][f + 3]
+        + &spectra[t + 04][f + 1]
+        + &spectra[t + 08][f + 4]
+        + &spectra[t + 12][f + 0]
+        + &spectra[t + 16][f + 6]
+        + &spectra[t + 20][f + 5]
+        + &spectra[t + 24][f + 2]
+}
+
+fn t_0n(spectra: &[Vec<f32>], t: i64) -> f32 {
+    if t < 0 {
+        return 0.0
+    }
+    let t = t as usize;
+
+    let lowest_7 = |c: usize| {
+        &spectra[t + c][0]
+            + &spectra[t + c][1]
+            + &spectra[t + c][2]
+            + &spectra[t + c][3]
+            + &spectra[t + c][4]
+            + &spectra[t + c][5]
+            + &spectra[t + c][6]
+    };
+
+    lowest_7(00) +
+    lowest_7(04) +
+    lowest_7(08) +
+    lowest_7(12) +
+    lowest_7(16) +
+    lowest_7(20) +
+    lowest_7(24)
 }

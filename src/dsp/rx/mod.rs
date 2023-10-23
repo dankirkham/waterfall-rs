@@ -107,7 +107,7 @@ impl Rx {
                 }
             }
 
-            self.synchronizer.synchronize(signal);
+            self.synchronizer.synchronize(&signal);
 
             // Correlate
             // if self.mode.is_sync() {
