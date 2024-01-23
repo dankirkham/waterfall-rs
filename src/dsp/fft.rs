@@ -8,29 +8,40 @@ use crate::units::{Frequency, Time};
 pub struct Fft {
     fft: Arc<dyn RealToComplex<f32>>,
     pub depth: usize,
-    bin_hz: f32,
+    pub sample_rate: Frequency,
 }
 
 impl Fft {
     pub fn new(duration: Time, sample_rate: Frequency) -> Self {
+        assert_ne!(duration.value(), 0.0);
+        assert_ne!(sample_rate.value(), 0.0);
         let mut planner = RealFftPlanner::<f32>::new();
 
-        let depth = (duration / sample_rate) as usize;
+        dbg!(duration / sample_rate);
+        let depth = (duration / sample_rate).round() as usize;
         let fft = planner.plan_fft_forward(depth as usize);
-        let bin_hz = sample_rate.value() / depth as f32;
 
         Self {
             depth,
-            bin_hz,
             fft,
+            sample_rate,
         }
     }
 
+    fn bin_hz(&self) -> Frequency {
+        self.sample_rate / self.depth as f32
+    }
+
     pub fn bin_to_frequency(&self, bin: usize) -> Frequency {
-        Frequency::Hertz(bin as f32 * self.bin_hz)
+        self.bin_hz() * bin
+    }
+
+    pub fn frequency_to_bin(&self, f: Frequency) -> usize {
+        (f / self.bin_hz()) as usize
     }
 
     pub fn run(&self, mut samples: Vec<f32>) -> Vec<f32> {
+        assert_eq!(samples.len(), self.depth);
         let mut spectrum = self.fft.make_output_vec();
         self.fft.process(&mut samples, &mut spectrum).unwrap();
 

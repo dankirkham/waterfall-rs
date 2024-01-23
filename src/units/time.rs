@@ -7,6 +7,7 @@ use super::Frequency;
 #[derive(Copy, Clone, Debug)]
 pub enum Time {
     Seconds(f32),
+    Milliseconds(f32),
 }
 
 impl fmt::Display for Time {
@@ -54,6 +55,7 @@ impl Time {
     pub fn value(&self) -> f32 {
         match self {
             Time::Seconds(secs) => *secs,
+            Time::Milliseconds(ms) => *ms / 1000.0,
         }
     }
 }

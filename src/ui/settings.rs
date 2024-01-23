@@ -28,6 +28,7 @@ impl<'a> Settings<'a> {
                 .show_ui(ui, |ui| {
                     ui.selectable_value(&mut self.config.input_source, InputSource::Audio, "Audio");
                     ui.selectable_value(&mut self.config.input_source, InputSource::Synth, "Synth");
+                    ui.selectable_value(&mut self.config.input_source, InputSource::Example, "Example");
                 });
 
             if self.config.input_source == InputSource::Audio {

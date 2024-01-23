@@ -1,6 +1,7 @@
 mod audio;
 mod instant_synth;
 mod synth;
+mod example;
 
 use tokio::sync::mpsc::Sender;
 
@@ -11,6 +12,7 @@ use crate::types::SampleType;
 pub enum InputSource {
     Audio,
     Synth,
+    Example,
 }
 
 pub trait Source {
@@ -21,3 +23,4 @@ pub trait Source {
 pub use audio::Audio;
 pub use instant_synth::{InstantSynth, InstantSynthBuilder};
 pub use synth::Synth;
+pub use example::Example;

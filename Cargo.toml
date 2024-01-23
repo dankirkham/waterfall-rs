@@ -22,9 +22,11 @@ statrs = "0.16.0"
 #tokio = { version = "1.20.1", features = ["full"] }
 tokio = { version = "1.20.1", features = ["sync"] }
 wasm-timer = "0.2.5"
+rayon = "1.6.0"
+rust-embed = "8.2.0"
+hound = "3.5.1"
 
 [dev-dependencies]
-rayon = "1.6.0"
 indicatif = {version = "0.17.2", features = ["rayon"]}
 plotters = "0.3.4"
 

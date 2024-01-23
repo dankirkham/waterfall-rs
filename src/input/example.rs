@@ -1,44 +1,50 @@
-use rand::{thread_rng, Rng};
+use std::borrow::Cow;
+use std::io::{BufReader, Cursor};
+use std::iter::Cycle;
+
+use hound::{WavIntoSamples, WavReader};
+use rust_embed::RustEmbed;
 use tokio::sync::mpsc::Sender;
 use wasm_timer::Instant;
 
 use crate::configuration::{AudioSampleRate, Configuration};
 use crate::input::Source;
-use crate::synth::ft8::Ft8;
-use crate::synth::Samples;
 use crate::types::SampleType;
-use crate::units::Frequency;
 
-pub struct Synth {
+#[derive(RustEmbed)]
+#[folder = "example_signals/"]
+struct Asset;
+
+pub struct Example<'a> {
     sender: Sender<Vec<SampleType>>,
-    // config: Arc<RwLock<Configuration>>,
     sample_rate: AudioSampleRate,
-    signal: Ft8,
     last_time: Option<Instant>,
+    signal: WavReader<BufReader<std::io::Cursor<Cow<'a, [u8]>>>>,
 }
 
-impl Synth {
+impl<'a> Example<'a> {
     pub fn new(sender: Sender<Vec<SampleType>>, config: &Configuration) -> Self {
         let sample_rate = config.audio_sample_rate;
-        let carrier = Frequency::Hertz(1000.0);
-        let signal = Ft8::new(sample_rate.as_frequency(), carrier);
+
+        let file = Asset::get("210703_133430.wav").unwrap();
+        let cursor = Cursor::new(file.data);
+        let reader = BufReader::new(cursor);
+        let signal = WavReader::new(reader).unwrap();
 
         Self {
             sender,
             sample_rate,
-            signal,
             last_time: None,
+            signal,
         }
     }
 }
 
-impl Source for Synth {
+impl<'a> Source for Example<'a> {
     fn run(&mut self, config: &Configuration) {
         let sample_rate = config.audio_sample_rate;
         if sample_rate != self.sample_rate {
-            self.sample_rate = sample_rate;
-            let carrier = Frequency::Hertz(2500.0);
-            self.signal = Ft8::new(sample_rate.as_frequency(), carrier);
+            panic!("hmm");
         }
 
         self.last_time = if let Some(last_time) = self.last_time {
@@ -48,13 +54,17 @@ impl Source for Synth {
             let new_samples = (elapsed * self.sample_rate.as_frequency().value()) as usize;
 
             if new_samples > 0 {
-                let mut rng = thread_rng();
-
                 let mut samples: Vec<SampleType> = Vec::with_capacity(new_samples);
                 (0..new_samples).into_iter().for_each(|_| {
-                    let r: f32 = rng.gen();
-                    let noise: f32 = 0.001 * r;
-                    samples.push(noise + self.signal.next());
+                    let sample = match self.signal.samples::<i16>().next() {
+                        Some(sample) => sample.unwrap(),
+                        None => {
+                            self.signal.seek(0).unwrap();
+                            self.signal.samples::<i16>().next().unwrap().unwrap()
+                        }
+                    };
+                    let sample = f32::from(sample);
+                    samples.push(sample / 10_f32.powf(50. / 10.));
                 });
 
                 self.sender.try_send(samples).unwrap();

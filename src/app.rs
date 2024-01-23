@@ -5,7 +5,7 @@ use wasm_timer::Instant;
 
 use crate::configuration::Configuration;
 use crate::dsp::Processor;
-use crate::input::{Audio, InputSource, Source, Synth};
+use crate::input::{Audio, Example, InputSource, Source, Synth};
 use crate::message::Message;
 use crate::scope::Scope;
 use crate::statistics::Statistics;
@@ -75,6 +75,7 @@ impl App {
         match config.input_source {
             InputSource::Synth => Box::new(Synth::new(tx, config)),
             InputSource::Audio => Box::new(Audio::new(tx, config)),
+            InputSource::Example => Box::new(Example::new(tx, config)),
         }
     }
 }

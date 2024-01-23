@@ -1,0 +1,15 @@
+# ~/.tmuxinator.yml
+
+name: waterfall-rs
+root: .
+
+windows:
+  - waterfall:
+      layout: main-horizontal
+      panes:
+        - nvim:
+          - nvim
+        - shell:
+          - git status
+        - watch:
+          - cargo watch -x test

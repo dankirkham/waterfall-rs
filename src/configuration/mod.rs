@@ -38,9 +38,9 @@ pub struct Configuration {
 impl Default for Configuration {
     fn default() -> Self {
         Self {
-            input_source: InputSource::Synth,
+            input_source: InputSource::Example,
             input_device: "Default".to_owned(),
-            audio_sample_rate: AudioSampleRate::F48000,
+            audio_sample_rate: AudioSampleRate::F12000,
             fft_depth: 8192,
             min_db: -40.0,
             max_db: 0.0,

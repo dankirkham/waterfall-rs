@@ -64,14 +64,6 @@ impl Div<Time> for Frequency {
     }
 }
 
-impl Mul<Time> for Frequency {
-    type Output = f32;
-
-    fn mul(self, rhs: Time) -> Self::Output {
-        Time::from(self).value() * rhs.value()
-    }
-}
-
 impl Div<Frequency> for Frequency {
     type Output = f32;
 
@@ -95,3 +87,20 @@ impl Div<f32> for Frequency {
         Self::Hertz((self.value() / rhs) as f32)
     }
 }
+
+impl Mul<Time> for Frequency {
+    type Output = f32;
+
+    fn mul(self, rhs: Time) -> Self::Output {
+        Time::from(self).value() * rhs.value()
+    }
+}
+
+impl Mul<usize> for Frequency {
+    type Output = Frequency;
+
+    fn mul(self, rhs: usize) -> Self::Output {
+        Self::Hertz(self.value() * rhs as f32)
+    }
+}
+

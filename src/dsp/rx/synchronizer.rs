@@ -1,21 +1,17 @@
 use std::cmp::Ordering;
-use std::sync::Arc;
-
-use realfft::RealFftPlanner;
-use realfft::RealToComplex;
 
 use crate::configuration::AudioSampleRate;
 use crate::types::SampleType;
 use crate::units::{Frequency, Time};
 use crate::dsp::fft::Fft;
+use crate::dsp::ifft::Ifft;
 
 /// Performs coarse synchronization per "Synchronization in FT8" by Mike
 /// Hasselbeck, WB2FKO
 pub struct Synchronizer {
     fft_coarse: Fft,
-
-    // fft_fine: Arc<dyn RealToComplex<f32>>,
-
+    fft_fine: Fft,
+    ifft: Ifft,
 }
 
 #[derive(Debug)]
@@ -60,10 +56,14 @@ impl Eq for Candidate { }
 
 impl Synchronizer {
     pub fn new(sample_rate: AudioSampleRate) -> Self {
-        let fft_coarse = Fft::new(Time::Seconds(0.160), sample_rate.baseband_sample_rate());
+        let fft_coarse = Fft::new(Time::Milliseconds(160.0), sample_rate.baseband_sample_rate());
+        let fft_fine = Fft::new(Time::Seconds(16.0), Frequency::Hertz(4000.0));
+        let ifft = Ifft::new(1000);
 
         Self {
             fft_coarse,
+            fft_fine,
+            ifft,
         }
     }
 
@@ -121,7 +121,7 @@ impl Synchronizer {
 
                 Candidate {
                     frequency: self.fft_coarse.bin_to_frequency(f),
-                    time: Time::Seconds(t as f32 * 0.040),
+                    time: Time::Milliseconds(t as f32 * 40.0),
                     strength,
                 }
             })
@@ -139,20 +139,47 @@ impl Synchronizer {
             .take(200)
             .collect();
 
-        let candidates: Vec<_> = candidates
-            .into_iter()
-            .take(1)
-            .collect();
-
         candidates
     }
 
+    fn process_candidate(&self, spectrum: &[SampleType], candidate: &Candidate) -> () {
+        if (candidate.time.value() < 0.0) {
+            eprintln!("negative times not yet implemented");
+            return;
+        }
+
+        let f_begin = candidate.frequency - Frequency::Hertz(9.375);
+        let f_end = candidate.frequency + Frequency::Hertz(53.125);
+        let bin_begin = self.fft_fine.frequency_to_bin(f_begin);
+        let bin_end = self.fft_fine.frequency_to_bin(f_end);
+        dbg!(&f_begin, &f_end, &bin_begin, &bin_end);
+        assert_eq!(bin_end - bin_begin, 1000);
+
+        let spectrum = &spectrum[bin_begin..bin_end];
+        assert_eq!(spectrum.len(), 1000);
+        let complex_time_domain_signal = self.ifft.run(&spectrum);
+        assert_eq!(complex_time_domain_signal.len(), 3200);
+    }
+
     fn process_candidates(&self, signal: &[SampleType], candidates: &[Candidate]) -> () {
+        let signal: Vec<_> = signal.into_iter().step_by(3).collect();
+        let mut signal_ext: Vec<SampleType> = Vec::with_capacity(self.fft_fine.depth);
+        signal_ext.extend(signal);
+        let one_second_of_zeros = vec![0.0; self.fft_fine.sample_rate.value() as usize];
+        signal_ext.extend(one_second_of_zeros);
+        assert_eq!(signal_ext.len(), 64000);
+
+        let spectrum = self.fft_fine.run(signal_ext);
+        dbg!(&spectrum.len());
+
+        let message: Vec<_> = candidates.iter().map(|c| self.process_candidate(&spectrum, c)).collect();
     }
 
     pub fn synchronize(&self, signal: &[SampleType]) -> Option<usize> {
+        return None;
         let candidates = self.coarse_sync(&signal);
-        dbg!(candidates);
+
+        let messages = self.process_candidates(&signal, &candidates);
 
         None
     }
@@ -179,21 +206,9 @@ fn t_0n(spectra: &[Vec<f32>], t: i64) -> f32 {
     }
     let t = t as usize;
 
-    let lowest_7 = |c: usize| {
-        &spectra[t + c][0]
-            + &spectra[t + c][1]
-            + &spectra[t + c][2]
-            + &spectra[t + c][3]
-            + &spectra[t + c][4]
-            + &spectra[t + c][5]
-            + &spectra[t + c][6]
-    };
+    let lowest_7 = |c: usize| (0..7)
+        .map(|i| &spectra[t + c][i])
+        .sum::<SampleType>();
 
-    lowest_7(00) +
-    lowest_7(04) +
-    lowest_7(08) +
-    lowest_7(12) +
-    lowest_7(16) +
-    lowest_7(20) +
-    lowest_7(24)
+    (0..7).map(|i| lowest_7(i * 4)).sum::<SampleType>()
 }
