@@ -1,22 +1,12 @@
-mod conditioner;
-mod rx_mode;
-mod symbolizer;
-mod synchronizer;
-
-use tokio::sync::mpsc::error::TrySendError;
 use tokio::sync::mpsc::Sender;
 use wasm_timer::Instant;
 
-use conditioner::Conditioner;
-use symbolizer::Symbolizer;
-use synchronizer::Synchronizer;
-
 use crate::configuration::{AudioSampleRate, Configuration};
 use crate::dsp::aggregator::Aggregator;
-use crate::message::{Ft8Message, MessageSender};
+use crate::message::MessageSender;
 use crate::statistics::Statistics;
 use crate::types::SampleType;
-use crate::units::{Frequency, Time};
+use crate::units::Time;
 
 pub struct Rx {
     plot_sender: Option<Sender<Vec<SampleType>>>,
@@ -25,35 +15,21 @@ pub struct Rx {
     sample_rate: AudioSampleRate,
 
     aggregator: Aggregator,
-    conditioner: Conditioner,
-    synchronizer: Synchronizer,
-    symbolizer: Symbolizer,
 }
 
 impl Rx {
     pub fn new(config: &Configuration) -> Self {
         let sample_rate = config.audio_sample_rate;
 
-        let conditioner = Conditioner::new();
-
-        let deviation = Frequency::Hertz(6.25);
         let aggregator_len = (Time::Seconds(15.0) / sample_rate.as_frequency()) as usize;
         let aggregator = Aggregator::new(aggregator_len);
-
-        let buffer_len = (sample_rate.baseband_sample_rate() / deviation) as usize;
-
-        let synchronizer = Synchronizer::new(sample_rate);
-
-        let symbolizer = Symbolizer::new(buffer_len, sample_rate);
-
         Self {
-            aggregator,
+            plot_sender: Default::default(),
+            message_sender: Default::default(),
+
             sample_rate,
-            plot_sender: None,
-            message_sender: None,
-            conditioner,
-            synchronizer,
-            symbolizer,
+
+            aggregator,
         }
     }
 
@@ -93,41 +69,8 @@ impl Rx {
 
         self.aggregator.aggregate(new_samples);
 
-        while let Some(mut samples) = self.aggregator.get_slice() {
+        while let Some(mut _samples) = self.aggregator.get_slice() {
             let now = Instant::now();
-
-            let signal = self.conditioner.condition(&config, &samples);
-
-            if let Some(sender) = &self.plot_sender {
-                if let Err(err) = sender.try_send(signal.clone()) {
-                    match err {
-                        TrySendError::Full(_) => println!("Plot ui falling behind"),
-                        TrySendError::Closed(_) => (),
-                    }
-                }
-            }
-
-            self.synchronizer.synchronize(&signal);
-
-            // Correlate
-            // if self.mode.is_sync() {
-            // } else {
-            //     let _symbol = self.symbolizer.symbolize(signal);
-            //     self.mode = self.mode.advance();
-            // }
-
-            // if self.mode.is_done() {
-            //     let message = Box::new(Ft8Message::new());
-            //     if let Some(sender) = &self.message_sender {
-            //         if let Err(err) = sender.try_send(message) {
-            //             match err {
-            //                 TrySendError::Full(_) => println!("Message receiver falling behind."),
-            //                 TrySendError::Closed(_) => (),
-            //             }
-            //         }
-            //     }
-            //     self.mode.reset();
-            // }
 
             let elapsed = now.elapsed();
             stats.rx.push(elapsed);

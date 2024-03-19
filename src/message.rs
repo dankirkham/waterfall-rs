@@ -17,7 +17,7 @@ impl Message for Ft8Message {
 impl Ft8Message {
     pub fn new() -> Self {
         Self {
-            message: "An FT8 message.".to_owned(),
+            message: "A message.".to_owned(),
         }
     }
 }

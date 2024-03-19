@@ -5,7 +5,7 @@ use wasm_timer::Instant;
 
 use crate::configuration::Configuration;
 use crate::dsp::Processor;
-use crate::input::{Audio, Example, InputSource, Source, Synth};
+use crate::input::{Audio, Example, InputSource, Source};
 use crate::message::Message;
 use crate::scope::Scope;
 use crate::statistics::Statistics;
@@ -73,7 +73,6 @@ impl App {
 
     fn create_source(config: &Configuration, tx: mpsc::Sender<Vec<SampleType>>) -> Box<dyn Source> {
         match config.input_source {
-            InputSource::Synth => Box::new(Synth::new(tx, config)),
             InputSource::Audio => Box::new(Audio::new(tx, config)),
             InputSource::Example => Box::new(Example::new(tx, config)),
         }
@@ -158,9 +157,6 @@ impl eframe::App for App {
                     let t: Time = avg.into();
                     ui.label(format!("Render: {}", t));
                 }
-                ui.with_layout(egui::Layout::right_to_left(), |ui| {
-                    ui.label("FT-8 Sync ⭕");
-                });
             });
         });
 

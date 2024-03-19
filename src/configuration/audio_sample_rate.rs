@@ -37,7 +37,7 @@ impl AudioSampleRate {
     pub fn baseband_sample_rate(&self) -> Frequency {
         match *self {
             AudioSampleRate::F8000 => Frequency::Hertz(100.0),
-            AudioSampleRate::F12000 => Frequency::Hertz(100.0),
+            AudioSampleRate::F12000 => Frequency::Hertz(12000.0),
             AudioSampleRate::F16000 => Frequency::Hertz(100.0),
             AudioSampleRate::F22050 => Frequency::Hertz(105.0),
             AudioSampleRate::F44100 => Frequency::Hertz(100.0),

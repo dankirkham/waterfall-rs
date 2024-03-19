@@ -1,8 +1,7 @@
 use std::borrow::Cow;
 use std::io::{BufReader, Cursor};
-use std::iter::Cycle;
 
-use hound::{WavIntoSamples, WavReader};
+use hound::WavReader;
 use rust_embed::RustEmbed;
 use tokio::sync::mpsc::Sender;
 use wasm_timer::Instant;
@@ -26,7 +25,8 @@ impl<'a> Example<'a> {
     pub fn new(sender: Sender<Vec<SampleType>>, config: &Configuration) -> Self {
         let sample_rate = config.audio_sample_rate;
 
-        let file = Asset::get("210703_133430.wav").unwrap();
+        // let file = Asset::get("210703_133430.wav").unwrap();
+        let file = Asset::get("RTTY_170Hz_45.45Bd.wav").unwrap();
         let cursor = Cursor::new(file.data);
         let reader = BufReader::new(cursor);
         let signal = WavReader::new(reader).unwrap();
@@ -64,7 +64,7 @@ impl<'a> Source for Example<'a> {
                         }
                     };
                     let sample = f32::from(sample);
-                    samples.push(sample / 10_f32.powf(50. / 10.));
+                    samples.push(sample / 2_f32.powf(16.));
                 });
 
                 self.sender.try_send(samples).unwrap();

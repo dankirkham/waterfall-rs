@@ -1,9 +1,6 @@
 use std::sync::Arc;
 
-use rand::distributions::uniform::UniformSampler;
 use rustfft::{Fft, FftPlanner, num_complex::Complex};
-
-use crate::units::{Frequency, Time};
 
 fn make_output_vec(samples: &[f32]) -> Vec<Complex<f32>> {
     samples.iter().map(|&n| Complex::<f32> { re: n, im: 0.0 }).collect()

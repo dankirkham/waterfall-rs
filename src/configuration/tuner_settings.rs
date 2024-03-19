@@ -2,7 +2,7 @@ use crate::units::Frequency;
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum DecoderType {
-    Ft8,
+    Rtty,
 }
 
 #[derive(Clone)]
@@ -17,9 +17,9 @@ impl Default for TunerSettings {
     fn default() -> Self {
         TunerSettings {
             lower: 0.0,
-            upper: 6000.0,
-            carrier: 0.0,
-            decoder: DecoderType::Ft8,
+            upper: 260.9,
+            carrier: 900.0,
+            decoder: DecoderType::Rtty,
         }
     }
 }

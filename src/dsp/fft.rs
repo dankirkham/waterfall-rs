@@ -28,6 +28,7 @@ impl Fft {
         }
     }
 
+    /// aka delta_f or df
     fn bin_hz(&self) -> Frequency {
         self.sample_rate / self.depth as f32
     }

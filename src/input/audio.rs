@@ -12,7 +12,7 @@ use crate::units::Frequency;
 
 pub struct Audio {
     sender: Sender<Vec<SampleType>>,
-    stream: Stream,
+    _stream: Stream,
 
     sample_rate: AudioSampleRate,
     device_name: String,
@@ -72,7 +72,6 @@ impl Audio {
 
                         let filtered: Vec<f32> =
                             samples.map(|sample| filter.next(sample)).collect();
-                        // let filtered: Vec<f32> = samples.map(|sample| ft8.next()).collect();
 
                         if let Err(err) = stream_sender.try_send(filtered) {
                             match err {
@@ -136,7 +135,6 @@ impl Audio {
 
                         let filtered: Vec<f32> =
                             samples.map(|sample| filter.next(sample)).collect();
-                        // let filtered: Vec<f32> = samples.map(|sample| ft8.next()).collect();
 
                         if let Err(err) = stream_sender.try_send(filtered) {
                             match err {
@@ -209,7 +207,7 @@ impl Audio {
             sender,
             // config,
             sample_rate,
-            stream,
+            _stream: stream,
             device_name,
         }
     }
