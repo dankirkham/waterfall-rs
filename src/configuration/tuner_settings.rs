@@ -18,7 +18,7 @@ impl Default for TunerSettings {
         TunerSettings {
             lower: 0.0,
             upper: 260.9,
-            carrier: 900.0,
+            carrier: 884.55,
             decoder: DecoderType::Rtty,
         }
     }

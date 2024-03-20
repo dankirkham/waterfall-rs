@@ -1,6 +1,9 @@
 mod aggregator;
 pub mod correlator;
+mod decode;
+mod downsample;
 pub mod fft;
+mod fir;
 pub mod ifft;
 mod processor;
 pub mod rx;

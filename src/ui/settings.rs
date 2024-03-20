@@ -27,7 +27,11 @@ impl<'a> Settings<'a> {
                 .selected_text(format!("{:?}", self.config.input_source))
                 .show_ui(ui, |ui| {
                     ui.selectable_value(&mut self.config.input_source, InputSource::Audio, "Audio");
-                    ui.selectable_value(&mut self.config.input_source, InputSource::Example, "Example");
+                    ui.selectable_value(
+                        &mut self.config.input_source,
+                        InputSource::Example,
+                        "Example",
+                    );
                 });
 
             if self.config.input_source == InputSource::Audio {

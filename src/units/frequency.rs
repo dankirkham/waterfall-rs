@@ -103,4 +103,3 @@ impl Mul<usize> for Frequency {
         Self::Hertz(self.value() * rhs as f32)
     }
 }
-

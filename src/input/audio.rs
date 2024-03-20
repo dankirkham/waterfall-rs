@@ -4,8 +4,6 @@ use tokio::sync::mpsc::error::TrySendError;
 use tokio::sync::mpsc::Sender;
 
 use crate::configuration::{AudioSampleRate, Configuration};
-use crate::filter::Filter;
-use crate::filter::HighPassFilter;
 use crate::input::Source;
 use crate::types::SampleType;
 use crate::units::Frequency;
@@ -59,21 +57,15 @@ impl Audio {
             // react to errors here.
         };
 
-        let mut filter =
-            HighPassFilter::from_frequency(Frequency::Hertz(300.0), sample_rate.as_frequency());
-
         let stream_sender = sender.clone();
         let stream = match config.channels() {
             1 => match config.sample_format() {
                 cpal::SampleFormat::F32 => device.build_input_stream(
                     &config.into(),
                     move |data: &[f32], _: &_| {
-                        let samples = data.iter().copied();
+                        let samples: Vec<_> = data.iter().copied().collect();
 
-                        let filtered: Vec<f32> =
-                            samples.map(|sample| filter.next(sample)).collect();
-
-                        if let Err(err) = stream_sender.try_send(filtered) {
+                        if let Err(err) = stream_sender.try_send(samples) {
                             match err {
                                 TrySendError::Full(_) => {
                                     println!("Waterfall processor falling behind")
@@ -88,11 +80,9 @@ impl Audio {
                     &config.into(),
                     move |data: &[i16], _: &_| {
                         let samples = data.iter().map(|&v| v as f32).map(|v| v / 32768.0);
+                        let samples: Vec<_> = samples.collect();
 
-                        let filtered: Vec<f32> =
-                            samples.map(|sample| filter.next(sample)).collect();
-
-                        if let Err(err) = stream_sender.try_send(filtered) {
+                        if let Err(err) = stream_sender.try_send(samples) {
                             match err {
                                 TrySendError::Full(_) => {
                                     println!("Waterfall processor falling behind")
@@ -111,11 +101,9 @@ impl Audio {
                             .map(|&v| v as f32)
                             .map(|v| v / 32768.0)
                             .map(|v| v - 1.0);
+                        let samples: Vec<_> = samples.collect();
 
-                        let filtered: Vec<f32> =
-                            samples.map(|sample| filter.next(sample)).collect();
-
-                        if let Err(err) = stream_sender.try_send(filtered) {
+                        if let Err(err) = stream_sender.try_send(samples) {
                             match err {
                                 TrySendError::Full(_) => {
                                     println!("Waterfall processor falling behind")
@@ -132,11 +120,9 @@ impl Audio {
                     &config.into(),
                     move |data: &[f32], _: &_| {
                         let samples = data.iter().step_by(2).copied();
+                        let samples: Vec<_> = samples.collect();
 
-                        let filtered: Vec<f32> =
-                            samples.map(|sample| filter.next(sample)).collect();
-
-                        if let Err(err) = stream_sender.try_send(filtered) {
+                        if let Err(err) = stream_sender.try_send(samples) {
                             match err {
                                 TrySendError::Full(_) => {
                                     println!("Waterfall processor falling behind")
@@ -155,11 +141,9 @@ impl Audio {
                             .step_by(2)
                             .map(|&v| v as f32)
                             .map(|v| v / 32768.0);
+                        let samples: Vec<_> = samples.collect();
 
-                        let filtered: Vec<f32> =
-                            samples.map(|sample| filter.next(sample)).collect();
-
-                        if let Err(err) = stream_sender.try_send(filtered) {
+                        if let Err(err) = stream_sender.try_send(samples) {
                             match err {
                                 TrySendError::Full(_) => {
                                     println!("Waterfall processor falling behind")
@@ -179,11 +163,9 @@ impl Audio {
                             .map(|&v| v as f32)
                             .map(|v| v / 32768.0)
                             .map(|v| v - 1.0);
+                        let samples: Vec<_> = samples.collect();
 
-                        let filtered: Vec<f32> =
-                            samples.map(|sample| filter.next(sample)).collect();
-
-                        if let Err(err) = stream_sender.try_send(filtered) {
+                        if let Err(err) = stream_sender.try_send(samples) {
                             match err {
                                 TrySendError::Full(_) => {
                                     println!("Waterfall processor falling behind")

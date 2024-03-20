@@ -2325,9 +2325,9 @@ checksum = "eb9f9e6e233e5c4a35559a617bf40a4ec447db2e84c20b55a6f83167b7e57872"
 
 [[package]]
 name = "primal-check"
-version = "0.3.1"
+version = "0.3.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "01419cee72c1a1ca944554e23d83e483e1bccf378753344e881de28b5487511d"
+checksum = "9df7f93fd637f083201473dab4fee2db4c429d32e55e3299980ab3957ab916a0"
 dependencies = [
  "num-integer",
 ]
@@ -2440,11 +2440,11 @@ dependencies = [
 
 [[package]]
 name = "realfft"
-version = "3.0.0"
+version = "3.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a83b876fe55da7e1bf5deeacb93d6411edf81eba0e1a497e79c067734729053a"
+checksum = "953d9f7e5cdd80963547b456251296efc2626ed4e3cbf36c869d9564e0220571"
 dependencies = [
- "rustfft 6.0.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "rustfft",
 ]
 
 [[package]]
@@ -2554,9 +2554,9 @@ dependencies = [
 
 [[package]]
 name = "rustfft"
-version = "6.0.1"
+version = "6.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b1d089e5c57521629a59f5f39bca7434849ff89bd6873b521afe389c1c602543"
+checksum = "43806561bc506d0c5d160643ad742e3161049ac01027b5e6d7524091fd401d86"
 dependencies = [
  "num-complex",
  "num-integer",
@@ -2564,19 +2564,7 @@ dependencies = [
  "primal-check",
  "strength_reduce",
  "transpose",
-]
-
-[[package]]
-name = "rustfft"
-version = "6.0.1"
-source = "git+https://github.com/ejmahler/RustFFT?rev=3dd012c0#3dd012c0e7a6b4335158c5158d78c74997a41d89"
-dependencies = [
- "num-complex",
- "num-integer",
- "num-traits",
- "primal-check",
- "strength_reduce",
- "transpose",
+ "version_check",
 ]
 
 [[package]]
@@ -2839,9 +2827,9 @@ checksum = "9e08d8363704e6c71fc928674353e6b7c23dcea9d82d7012c8faf2a3a025f8d0"
 
 [[package]]
 name = "strength_reduce"
-version = "0.2.3"
+version = "0.2.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a3ff2f71c82567c565ba4b3009a9350a96a7269eaa4001ebedae926230bc2254"
+checksum = "fe895eb47f22e2ddd4dabc02bce419d2e643c8e3b585c78158b349195bc24d82"
 
 [[package]]
 name = "strsim"
@@ -3243,7 +3231,7 @@ dependencies = [
  "rayon",
  "realfft",
  "rust-embed",
- "rustfft 6.0.1 (git+https://github.com/ejmahler/RustFFT?rev=3dd012c0)",
+ "rustfft",
  "statrs",
  "tokio",
  "tracing-wasm",

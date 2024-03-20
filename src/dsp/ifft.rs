@@ -1,9 +1,12 @@
 use std::sync::Arc;
 
-use rustfft::{Fft, FftPlanner, num_complex::Complex};
+use rustfft::{num_complex::Complex, Fft, FftPlanner};
 
 fn make_output_vec(samples: &[f32]) -> Vec<Complex<f32>> {
-    samples.iter().map(|&n| Complex::<f32> { re: n, im: 0.0 }).collect()
+    samples
+        .iter()
+        .map(|&n| Complex::<f32> { re: n, im: 0.0 })
+        .collect()
 }
 
 pub struct Ifft {
@@ -16,10 +19,7 @@ impl Ifft {
         let mut planner = FftPlanner::new();
         let ifft = planner.plan_fft_inverse(depth);
 
-        Self {
-            ifft,
-            depth,
-        }
+        Self { ifft, depth }
     }
 
     pub fn run(&self, samples: &[f32]) -> Vec<Complex<f32>> {

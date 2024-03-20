@@ -54,5 +54,4 @@ impl Fft {
 
         spectrum
     }
-
 }
