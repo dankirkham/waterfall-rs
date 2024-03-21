@@ -1,10 +1,13 @@
+mod message_state_machine;
 mod state_machine;
 mod symbols;
 
 use crate::dsp::downsample::Downsample;
 use crate::dsp::fir::{AsymmetricFir, FirBuilder};
+use crate::message::Message;
 use crate::units::Frequency;
 
+use message_state_machine::MessageStateMachine;
 use state_machine::StateMachine;
 
 pub struct Rtty {
@@ -19,6 +22,7 @@ pub struct Rtty {
     mark_envelope: AsymmetricFir,
 
     state_machine: StateMachine,
+    message_state_machine: MessageStateMachine,
 }
 
 impl Rtty {
@@ -235,12 +239,16 @@ impl Rtty {
             space_envelope,
             mark_envelope,
 
-            state_machine: StateMachine::new(downsample.output_sample_rate, Frequency::Hertz(45.45)),
+            state_machine: StateMachine::new(
+                downsample.output_sample_rate,
+                Frequency::Hertz(45.45),
+            ),
+            message_state_machine: MessageStateMachine::new(downsample.output_sample_rate),
             downsample,
         }
     }
 
-    pub fn update(&mut self, sample: f32) -> Option<f32> {
+    pub fn update(&mut self, sample: f32) -> (Option<f32>, Option<Box<dyn Message>>) {
         // Space is at 930 Hz
         // Mark is at 1100 Hz
         // Spacing is 170 Hz
@@ -256,14 +264,22 @@ impl Rtty {
             let mark_env = self.mark_envelope.update(mark_val.abs());
             let space_env = self.space_envelope.update(space_val.abs());
 
-            if mark_env > space_env {
-                self.state_machine.update(true);
-                return Some(1.);
+            let (c, mark) = if mark_env > space_env {
+                (self.state_machine.update(true), Some(1.))
             } else {
-                self.state_machine.update(false);
-                return Some(0.);
-            }
+                (self.state_machine.update(false), Some(0.))
+            };
+
+            let message = self.message_state_machine.update(c);
+            let message: Option<Box<dyn Message>> = if let Some(message) = message {
+                Some(Box::new(message))
+            } else {
+                None
+            };
+
+            (mark, message)
+        } else {
+            (None, None)
         }
-        None
     }
 }

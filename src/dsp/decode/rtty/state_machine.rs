@@ -1,5 +1,5 @@
-use crate::units::Frequency;
 use crate::dsp::decode::rtty::symbols::{decode, ControlType, SymbolState};
+use crate::units::Frequency;
 
 use super::symbols::Symbol;
 
@@ -17,7 +17,6 @@ pub struct StateMachine {
     full_wait: u32,
     state: State,
     data: u8,
-    symbol_state: SymbolState,
 }
 
 impl StateMachine {
@@ -29,11 +28,10 @@ impl StateMachine {
             full_wait,
             state: Default::default(),
             data: Default::default(),
-            symbol_state: Default::default(),
         }
     }
 
-    pub fn update(&mut self, mark: bool) {
+    pub fn update(&mut self, mark: bool) -> Option<u8> {
         match self.state {
             State::Reset => {
                 self.data = 0;
@@ -80,26 +78,17 @@ impl StateMachine {
                 if wait != 0 {
                     self.state = State::WaitForStop(wait - 1);
                 } else {
-                    self.data = self.data >> 3;
-                    let symbol = decode(self.data, self.symbol_state);
-                    match symbol {
-                        Symbol::Control(ref ct) => {
-                            match ct {
-                                ControlType::Letters => self.symbol_state = SymbolState::Letters,
-                                ControlType::Figures => self.symbol_state = SymbolState::Figures,
-                                _ => print!("{}", symbol),
-                            }
-                        },
-                        _ => print!("{}", symbol),
-                    }
                     if mark {
+                        self.data = self.data >> 3;
                         self.state = State::Reset;
+                        return Some(self.data);
                     } else {
-                        eprintln!("Stop bit failed");
                         self.state = State::Reset;
+                        return None;
                     }
                 }
             }
         }
+        None
     }
 }

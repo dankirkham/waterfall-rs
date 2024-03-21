@@ -20,7 +20,7 @@ pub struct Rx {
 impl Rx {
     pub fn new(config: &Configuration) -> Self {
         let sample_rate = config.audio_sample_rate;
-        let aggregator = Aggregator::new(256);
+        let aggregator = Aggregator::new(11025);
 
         let decoder = Rtty::new(sample_rate.into());
         Self {
@@ -73,16 +73,29 @@ impl Rx {
 
             let mut output_samples: Vec<f32> = Vec::new();
             for sample in samples {
-                let out = self.decoder.update(sample);
+                let (out, message) = self.decoder.update(sample);
                 if let Some(out) = out {
                     output_samples.push(out);
+                }
+
+                if let Some(message) = message {
+                    if let Some(sender) = &self.message_sender {
+                        if let Err(err) = sender.try_send(message) {
+                            match err {
+                                //TrySendError::Full(_) => println!("Plot ui falling behind"),
+                                TrySendError::Full(_) => (),
+                                TrySendError::Closed(_) => (),
+                            }
+                        }
+                    }
                 }
             }
 
             if let Some(sender) = &self.plot_sender {
                 if let Err(err) = sender.try_send(output_samples) {
                     match err {
-                        TrySendError::Full(_) => println!("Plot ui falling behind"),
+                        //TrySendError::Full(_) => println!("Plot ui falling behind"),
+                        TrySendError::Full(_) => (),
                         TrySendError::Closed(_) => (),
                     }
                 }

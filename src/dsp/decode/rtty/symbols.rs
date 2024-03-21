@@ -1,5 +1,6 @@
 use std::fmt::Display;
 
+#[derive(Debug)]
 pub enum ControlType {
     Letters,
     Figures,
@@ -9,34 +10,44 @@ pub enum ControlType {
     CarriageReturn,
 }
 
-#[derive(Copy, Clone, Default)]
+#[derive(Copy, Clone, Default, Debug)]
 pub enum SymbolState {
     #[default]
     Letters,
     Figures,
 }
 
+#[derive(Debug)]
 pub enum Symbol {
     Control(ControlType),
     Letter(char),
     Figure(char),
 }
 
+impl Symbol {
+    pub fn char(&self) -> Option<char> {
+        match self {
+            Self::Control(ct) => match ct {
+                ControlType::Null => Some('\0'),
+                ControlType::Space => Some(' '),
+                ControlType::Letters => None,
+                ControlType::Figures => None,
+                ControlType::LineFeed => Some('\n'),
+                ControlType::CarriageReturn => Some('\r'),
+            },
+            Self::Letter(c) => Some(*c),
+            Self::Figure(c) => Some(*c),
+        }
+    }
+}
+
 impl Display for Symbol {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let c = match self {
-            Self::Control(ct) => match ct {
-                ControlType::Null => '\0',
-                ControlType::Space => ' ',
-                ControlType::Letters => 'l',
-                ControlType::Figures => 'f',
-                ControlType::LineFeed => '\n',
-                ControlType::CarriageReturn => '\r',
-            },
-            Self::Letter(c) => *c,
-            Self::Figure(c) => *c,
-        };
-        write!(f, "{}", c)
+        if let Some(c) = self.char() {
+            write!(f, "{}", c)
+        } else {
+            write!(f, "")
+        }
     }
 }
 
@@ -111,6 +122,6 @@ pub fn decode(val: u8, state: SymbolState) -> Symbol {
             0b10101 => Symbol::Letter('6'),
             0b10001 => Symbol::Letter('"'),
             _ => unreachable!("values should be <= 0x1f"),
-        }
+        },
     }
 }

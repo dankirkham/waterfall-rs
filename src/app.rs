@@ -7,6 +7,7 @@ use crate::configuration::Configuration;
 use crate::dsp::Processor;
 use crate::input::{Audio, Example, InputSource, Source};
 use crate::message::Message;
+use crate::messages::MessageCollector;
 use crate::scope::Scope;
 use crate::statistics::Statistics;
 use crate::types::SampleType;
@@ -22,6 +23,7 @@ pub struct App {
     processor: Processor,
 
     scope: Scope,
+    messages: MessageCollector,
 
     source: Box<dyn Source>,
     input_source: InputSource,
@@ -38,13 +40,14 @@ impl App {
         let (image_tx, image_rx) = mpsc::channel::<ColorImage>(5);
         let (sample_tx, sample_rx) = mpsc::channel::<Vec<SampleType>>(1024);
         let (plot_tx, plot_rx) = mpsc::channel::<Vec<SampleType>>(5);
-        let (message_tx, _message_rx) = mpsc::channel::<Box<dyn Message>>(5);
+        let (message_tx, message_rx) = mpsc::channel::<Box<dyn Message>>(5);
 
         let config = Configuration::default();
 
         let processor = Processor::new(sample_rx, image_tx, plot_tx, message_tx, &config);
 
         let scope = Scope::new(plot_rx);
+        let messages = MessageCollector::new(message_rx);
 
         let input_source = config.input_source;
         let source = Self::create_source(&config, sample_tx);
@@ -59,6 +62,7 @@ impl App {
             processor,
 
             scope,
+            messages,
 
             source,
             input_source,
@@ -93,6 +97,7 @@ impl eframe::App for App {
         self.processor.run(&self.config, &mut self.stats);
 
         self.scope.run(&mut self.config);
+        self.messages.run(&mut self.config);
 
         // egui::TopBottomPanel::top("top_panel").show(ctx, |ui| {
         //     egui::menu::bar(ui, |ui| {
@@ -137,9 +142,10 @@ impl eframe::App for App {
             });
 
         egui::Window::new("📻 Messages")
+            .default_height(100.)
             .open(&mut self.show.messages)
             .show(ctx, |ui| {
-                let mut messages = Messages::default();
+                let mut messages = Messages::new(&self.messages);
                 messages.ui(ui);
             });
 

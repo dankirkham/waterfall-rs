@@ -26,6 +26,7 @@ impl<'a> Settings<'a> {
             egui::ComboBox::from_label("Source")
                 .selected_text(format!("{:?}", self.config.input_source))
                 .show_ui(ui, |ui| {
+                    #[cfg(not(target_arch = "wasm32"))]
                     ui.selectable_value(&mut self.config.input_source, InputSource::Audio, "Audio");
                     ui.selectable_value(
                         &mut self.config.input_source,

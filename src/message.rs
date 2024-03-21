@@ -1,24 +1,27 @@
 use tokio::sync::mpsc;
 
 pub trait Message {
-    fn value(&self) -> String;
+    fn payload(&self) -> String;
+    fn mode(&self) -> String;
 }
 
-pub struct Ft8Message {
+pub struct RttyMessage {
     message: String,
 }
 
-impl Message for Ft8Message {
-    fn value(&self) -> String {
+impl Message for RttyMessage {
+    fn payload(&self) -> String {
         self.message.clone()
+    }
+
+    fn mode(&self) -> String {
+        "RTTY".to_string()
     }
 }
 
-impl Ft8Message {
-    pub fn new() -> Self {
-        Self {
-            message: "A message.".to_owned(),
-        }
+impl RttyMessage {
+    pub fn new(message: String) -> Self {
+        Self { message }
     }
 }
 
